@@ -1,27 +1,20 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
-import Container from '@mui/material/Container'
 import { AuthCard } from './components/auth/AuthCard'
 import { Layout } from './components/layout/Layout'
-import { VideoGrid } from './components/videos/VideoGrid'
-import { mockVideos } from './data/mockVideos'
-import { getCurrentUser, logIn, logOut, onAuthChange, signUp } from './lib/auth'
-import type { LoginFormValues, SignUpFormValues, User } from './types/user'
+import { useAuth } from './context/useAuth'
+import { logIn, signUp } from './lib/auth'
+import { HomePage } from './pages/HomePage'
+import { UploadPage } from './pages/UploadPage'
+import { VideoPage } from './pages/VideoPage'
+import type { LoginFormValues, SignUpFormValues } from './types/user'
 
 function App() {
-  const [user, setUser] = useState<User | null>(null)
-  const [checkingSession, setCheckingSession] = useState(true)
+  const { user, checkingSession } = useAuth()
   const [signUpNotice, setSignUpNotice] = useState<string | null>(null)
-
-  useEffect(() => {
-    getCurrentUser().then((current) => {
-      setUser(current)
-      setCheckingSession(false)
-    })
-    return onAuthChange(setUser)
-  }, [])
 
   async function handleLogin(values: LoginFormValues) {
     setSignUpNotice(null)
@@ -36,16 +29,18 @@ function App() {
   }
 
   return (
-    <Layout user={user} onLogout={() => logOut()}>
+    <Layout>
       {checkingSession ? (
         <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <CircularProgress />
         </Box>
       ) : user ? (
-        <Container maxWidth="lg" sx={{ flex: 1, py: 4 }}>
-          {/* TODO: replace mockVideos with a real fetch from Supabase */}
-          <VideoGrid videos={mockVideos} />
-        </Container>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/upload" element={<UploadPage />} />
+          <Route path="/videos/:id" element={<VideoPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       ) : (
         <Box
           sx={{

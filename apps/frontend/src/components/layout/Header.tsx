@@ -1,16 +1,15 @@
+import { Link as RouterLink } from 'react-router-dom'
 import AppBar from '@mui/material/AppBar'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Toolbar from '@mui/material/Toolbar'
 import Typography from '@mui/material/Typography'
-import type { User } from '../../types/user'
+import { useAuth } from '../../context/useAuth'
+import { logOut } from '../../lib/auth'
 
-interface HeaderProps {
-  user: User | null
-  onLogout: () => void
-}
+export function Header() {
+  const { user } = useAuth()
 
-export function Header({ user, onLogout }: HeaderProps) {
   return (
     <AppBar
       position="sticky"
@@ -19,16 +18,24 @@ export function Header({ user, onLogout }: HeaderProps) {
       sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}
     >
       <Toolbar sx={{ justifyContent: 'space-between' }}>
-        <Typography variant="h6" component="span" sx={{ fontWeight: 700 }}>
+        <Typography
+          variant="h6"
+          component={RouterLink}
+          to="/"
+          sx={{ fontWeight: 700, color: 'inherit', textDecoration: 'none' }}
+        >
           Sold
         </Typography>
 
         {user && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Button component={RouterLink} to="/upload" variant="contained" size="small">
+              Upload
+            </Button>
             <Typography color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
               {user.name || user.email}
             </Typography>
-            <Button variant="outlined" size="small" onClick={onLogout}>
+            <Button variant="outlined" size="small" onClick={() => logOut()}>
               Log out
             </Button>
           </Box>
