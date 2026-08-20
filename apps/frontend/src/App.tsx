@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
-import Button from '@mui/material/Button'
 import CircularProgress from '@mui/material/CircularProgress'
-import Paper from '@mui/material/Paper'
-import Typography from '@mui/material/Typography'
+import Container from '@mui/material/Container'
 import { AuthCard } from './components/auth/AuthCard'
+import { Layout } from './components/layout/Layout'
+import { VideoGrid } from './components/videos/VideoGrid'
+import { mockVideos } from './data/mockVideos'
 import { getCurrentUser, logIn, logOut, onAuthChange, signUp } from './lib/auth'
 import type { LoginFormValues, SignUpFormValues, User } from './types/user'
 
@@ -35,43 +36,37 @@ function App() {
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: '100svh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 2,
-        p: 2,
-      }}
-    >
+    <Layout user={user} onLogout={() => logOut()}>
       {checkingSession ? (
-        <CircularProgress />
+        <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <CircularProgress />
+        </Box>
       ) : user ? (
-        <Paper elevation={2} sx={{ maxWidth: 400, width: '100%', p: 4, textAlign: 'center' }}>
-          <Typography variant="h5" component="h1" sx={{ fontWeight: 600 }} gutterBottom>
-            Signed in
-          </Typography>
-          <Typography color="text.secondary" gutterBottom>
-            {user.name ? `${user.name} — ` : ''}
-            {user.email}
-          </Typography>
-          <Button variant="outlined" onClick={() => logOut()} sx={{ mt: 2 }}>
-            Log out
-          </Button>
-        </Paper>
+        <Container maxWidth="lg" sx={{ flex: 1, py: 4 }}>
+          {/* TODO: replace mockVideos with a real fetch from Supabase */}
+          <VideoGrid videos={mockVideos} />
+        </Container>
       ) : (
-        <>
+        <Box
+          sx={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 2,
+            p: 2,
+          }}
+        >
           {signUpNotice && (
             <Alert severity="success" sx={{ maxWidth: 400, width: '100%' }}>
               {signUpNotice}
             </Alert>
           )}
           <AuthCard onLogin={handleLogin} onSignUp={handleSignUp} />
-        </>
+        </Box>
       )}
-    </Box>
+    </Layout>
   )
 }
 
