@@ -49,3 +49,8 @@ npm run lint
 Each app is its own npm workspace under `apps/`, with its own `package.json`.
 Run a script in just one workspace with `npm run <script> -w frontend` or
 `-w backend`, or add a dependency to one with `npm install <pkg> -w backend`.
+
+## Deployment
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the dev/staging/production setup
+(Vercel + AWS Lambda + per-environment Supabase/R2).
