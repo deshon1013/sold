@@ -40,7 +40,7 @@ aws cloudformation deploy \
   --template-file infra/github-oidc.yaml \
   --stack-name sold-github-oidc \
   --capabilities CAPABILITY_NAMED_IAM \
-  --parameter-overrides GitHubOrgAndRepo=deshon1013/sold
+  --parameter-overrides GitHubOrg=deshon1013 GitHubRepo=sold
 ```
 
 Then grab the role ARN it created:

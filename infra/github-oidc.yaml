@@ -5,10 +5,12 @@ Description: >
   once, manually (see README below), before the deploy workflow can run.
 
 Parameters:
-  GitHubOrgAndRepo:
+  GitHubOrg:
     Type: String
-    Description: "GitHub org/user + repo, e.g. deshon1013/sold"
-    Default: deshon1013/sold
+    Default: deshon1013
+  GitHubRepo:
+    Type: String
+    Default: sold
 
 Resources:
   GitHubOidcProvider:
@@ -38,10 +40,14 @@ Resources:
               StringEquals:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
               StringLike:
-                # Any branch/PR/tag in this repo can assume the role -- narrow
-                # this (e.g. to ref:refs/heads/main) if you want prod deploys
-                # gated to a specific branch at the AWS trust-policy level too.
-                token.actions.githubusercontent.com:sub: !Sub repo:${GitHubOrgAndRepo}:*
+                # Any branch/PR/tag/environment in this repo can assume the role --
+                # narrow this if you want prod deploys gated to a specific branch
+                # at the AWS trust-policy level too.
+                #
+                # GitHub's OIDC subject includes numeric org/repo IDs alongside the
+                # names (e.g. "repo:org@12345/repo@67890:environment:dev"), not just
+                # "repo:org/repo:...", so both segments need a trailing wildcard.
+                token.actions.githubusercontent.com:sub: !Sub repo:${GitHubOrg}*/${GitHubRepo}*:*
       Policies:
         - PolicyName: sam-deploy
           PolicyDocument:
