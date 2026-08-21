@@ -12,9 +12,9 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # push to main -> dev automatically; manual run -> production.
-    # "production" should have required reviewers configured on its GitHub Environment.
-    environment: ${{ github.event_name == 'push' && 'dev' || 'production' }}
+    # push to main -> dev automatically; manual run -> prod.
+    # "prod" should have required reviewers configured on its GitHub Environment.
+    environment: ${{ github.event_name == 'push' && 'dev' || 'prod' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -39,7 +39,7 @@ jobs:
       - name: sam deploy
         working-directory: apps/backend
         env:
-          ENVIRONMENT: ${{ github.event_name == 'push' && 'dev' || 'production' }}
+          ENVIRONMENT: ${{ github.event_name == 'push' && 'dev' || 'prod' }}
         run: |
           sam deploy \
             --stack-name "sold-backend-${ENVIRONMENT}" \

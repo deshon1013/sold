@@ -1,7 +1,7 @@
 # Deploying Sold
 
 Two environments: **dev** (auto-deploys on every push to `main`) and
-**production** (manually triggered, gated behind a required reviewer).
+**prod** (manually triggered, gated behind a required reviewer).
 Frontend lives on Vercel; backend is Express on AWS Lambda behind a Function
 URL; each environment gets its own Supabase project and R2 bucket.
 
@@ -54,8 +54,9 @@ aws cloudformation describe-stacks \
 
 ### 4. GitHub — Environments + secrets
 
-Repo Settings -> Environments. Create two: `dev` and `production`. On
-**production**, add yourself as a required reviewer (Environment protection
+Repo Settings -> Environments. Create two, named exactly `dev` and `prod`
+(these names must match `.github/workflows/deploy-backend.yml` exactly). On
+**prod**, add yourself as a required reviewer (Environment protection
 rules) — this is what gates prod deploys behind manual approval.
 
 In **each** environment, add these secrets (using that environment's own
@@ -82,7 +83,7 @@ AWS_DEPLOY_ROLE_ARN   <- the ARN from step 3
 
 - Push to `main` -> deploys **dev** automatically (see
   `.github/workflows/deploy-backend.yml`)
-- For production: Actions tab -> "Deploy Backend" -> Run workflow
+- For prod: Actions tab -> "Deploy Backend" -> Run workflow
 
 Each deploy prints a `FunctionUrl` output (also visible in the CloudFormation
 stack outputs, or the Lambda console) — that's your `VITE_API_URL` for that
@@ -117,4 +118,4 @@ Once you have real Vercel URLs, go back and:
 - Open a PR -> `ci.yml` runs lint + build on both workspaces
 - Merge to `main` -> backend redeploys to dev automatically, Vercel redeploys
   its Production/Preview targets per its own branch config
-- Promote to production -> Actions tab -> "Deploy Backend" -> Run workflow
+- Promote to prod -> Actions tab -> "Deploy Backend" -> Run workflow
