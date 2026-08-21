@@ -1,0 +1,98 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  One-time bootstrap: lets GitHub Actions deploy to this AWS account via OIDC,
+  with no long-lived AWS access keys stored as GitHub secrets. Deploy this
+  once, manually (see README below), before the deploy workflow can run.
+
+Parameters:
+  GitHubOrgAndRepo:
+    Type: String
+    Description: "GitHub org/user + repo, e.g. deshon1013/sold"
+    Default: deshon1013/sold
+
+Resources:
+  GitHubOidcProvider:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+      ThumbprintList:
+        # GitHub's OIDC thumbprint is stable and documented by AWS/GitHub;
+        # AWS also accepts an empty list and verifies via its own trust store,
+        # but recent accounts require at least one value here.
+        - 6938fd4d98bab03faadb97b34396831e3780aea1
+
+  GitHubActionsDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sold-github-actions-deploy
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Ref GitHubOidcProvider
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+              StringLike:
+                # Any branch/PR/tag in this repo can assume the role -- narrow
+                # this (e.g. to ref:refs/heads/main) if you want prod deploys
+                # gated to a specific branch at the AWS trust-policy level too.
+                token.actions.githubusercontent.com:sub: !Sub repo:${GitHubOrgAndRepo}:*
+      Policies:
+        - PolicyName: sam-deploy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: CloudFormation
+                Effect: Allow
+                Action:
+                  - cloudformation:*
+                Resource:
+                  - !Sub arn:aws:cloudformation:*:${AWS::AccountId}:stack/sold-backend-*/*
+              - Sid: Lambda
+                Effect: Allow
+                Action:
+                  - lambda:*
+                Resource:
+                  - !Sub arn:aws:lambda:*:${AWS::AccountId}:function:sold-backend-*
+              - Sid: IamPassRoleForLambdaExecutionRole
+                Effect: Allow
+                Action:
+                  - iam:CreateRole
+                  - iam:DeleteRole
+                  - iam:GetRole
+                  - iam:PutRolePolicy
+                  - iam:DeleteRolePolicy
+                  - iam:AttachRolePolicy
+                  - iam:DetachRolePolicy
+                  - iam:PassRole
+                  - iam:TagRole
+                Resource:
+                  - !Sub arn:aws:iam::${AWS::AccountId}:role/sold-backend-*
+              - Sid: SamDeploymentBucket
+                Effect: Allow
+                Action:
+                  - s3:*
+                Resource:
+                  - arn:aws:s3:::aws-sam-cli-managed-default*
+              - Sid: SamCloudFormationBucketLookup
+                Effect: Allow
+                Action:
+                  - s3:CreateBucket
+                  - s3:GetBucketLocation
+                Resource: '*'
+              - Sid: CloudWatchLogs
+                Effect: Allow
+                Action:
+                  - logs:*
+                Resource:
+                  - !Sub arn:aws:logs:*:${AWS::AccountId}:log-group:/aws/lambda/sold-backend-*
+
+Outputs:
+  DeployRoleArn:
+    Description: Put this in the GitHub repo's Actions secrets/variables as AWS_DEPLOY_ROLE_ARN
+    Value: !GetAtt GitHubActionsDeployRole.Arn

@@ -1,0 +1,65 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Sold backend API (Express on Lambda, behind a Function URL)
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues: [dev, production]
+  SupabaseUrl:
+    Type: String
+  SupabaseServiceRoleKey:
+    Type: String
+    NoEcho: true
+  R2AccountId:
+    Type: String
+  R2AccessKeyId:
+    Type: String
+    NoEcho: true
+  R2SecretAccessKey:
+    Type: String
+    NoEcho: true
+  R2BucketName:
+    Type: String
+  R2PublicUrl:
+    Type: String
+
+Resources:
+  BackendFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: 'node22'
+        Sourcemap: false
+        EntryPoints:
+          - src/lambda.ts
+    Properties:
+      FunctionName: !Sub sold-backend-${Environment}
+      Runtime: nodejs22.x
+      Handler: lambda.handler
+      CodeUri: .
+      MemorySize: 256
+      Timeout: 10
+      Environment:
+        Variables:
+          SUPABASE_URL: !Ref SupabaseUrl
+          SUPABASE_SERVICE_ROLE_KEY: !Ref SupabaseServiceRoleKey
+          R2_ACCOUNT_ID: !Ref R2AccountId
+          R2_ACCESS_KEY_ID: !Ref R2AccessKeyId
+          R2_SECRET_ACCESS_KEY: !Ref R2SecretAccessKey
+          R2_BUCKET_NAME: !Ref R2BucketName
+          R2_PUBLIC_URL: !Ref R2PublicUrl
+      FunctionUrlConfig:
+        AuthType: NONE
+        Cors:
+          AllowOrigins:
+            - '*' # tighten to your deployed frontend origin(s) once you have them
+          AllowMethods: ['GET', 'POST']
+          AllowHeaders: ['content-type', 'authorization']
+
+Outputs:
+  FunctionUrl:
+    Description: Public URL for this environment's backend -- set as VITE_API_URL on the frontend
+    Value: !GetAtt BackendFunctionUrl.FunctionUrl
