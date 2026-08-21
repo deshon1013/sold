@@ -59,6 +59,10 @@ Resources:
                   - cloudformation:*
                 Resource:
                   - !Sub arn:aws:cloudformation:*:${AWS::AccountId}:stack/sold-backend-*/*
+                  # SAM's own bootstrap stack for `sam deploy --resolve-s3` (creates the
+                  # managed S3 bucket used for deployment artifacts) -- separate from our
+                  # own sold-backend-* stacks, created once per account/region.
+                  - !Sub arn:aws:cloudformation:*:${AWS::AccountId}:stack/aws-sam-cli-managed-default/*
               - Sid: Lambda
                 Effect: Allow
                 Action:
