@@ -63,6 +63,15 @@ Resources:
                   # managed S3 bucket used for deployment artifacts) -- separate from our
                   # own sold-backend-* stacks, created once per account/region.
                   - !Sub arn:aws:cloudformation:*:${AWS::AccountId}:stack/aws-sam-cli-managed-default/*
+              - Sid: SamTransform
+                Effect: Allow
+                Action:
+                  - cloudformation:CreateChangeSet
+                Resource:
+                  # Using the SAM transform (both our own templates and SAM's managed-
+                  # default bootstrap stack use it) requires this separate permission on
+                  # the transform itself, distinct from permissions on the stack resource.
+                  - !Sub arn:aws:cloudformation:${AWS::Region}:aws:transform/Serverless-2016-10-31
               - Sid: Lambda
                 Effect: Allow
                 Action:

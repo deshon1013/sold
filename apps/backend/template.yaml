@@ -5,7 +5,7 @@ Description: Sold backend API (Express on Lambda, behind a Function URL)
 Parameters:
   Environment:
     Type: String
-    AllowedValues: [dev, production]
+    AllowedValues: [dev, prod]
   SupabaseUrl:
     Type: String
   SupabaseServiceRoleKey:
