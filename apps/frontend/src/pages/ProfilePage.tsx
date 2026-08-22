@@ -15,7 +15,7 @@ import Typography from '@mui/material/Typography'
 import { useAuth } from '../context/useAuth'
 import { updateProfile } from '../lib/auth'
 import { getInitials } from '../lib/avatar'
-import { uploadFile } from '../lib/uploads'
+import { deleteAvatar, uploadFile } from '../lib/uploads'
 
 // TODO: rest of profile logic (bio, etc.) lands alongside the theme work in a separate branch.
 export function ProfilePage() {
@@ -69,12 +69,22 @@ export function ProfilePage() {
     setError(null)
     setSaving(true)
     try {
+      const previousAvatarUrl = user?.avatarUrl
       const avatarUrl = pendingAvatarFile ? await uploadFile(pendingAvatarFile, 'avatar') : undefined
 
       await updateProfile({
         ...(nameChanged ? { name: trimmed } : {}),
         ...(avatarUrl ? { avatarUrl } : {}),
       })
+
+      // Users only ever have one avatar -- clean up the old file now that the
+      // new one is safely saved. Best-effort: a failure here shouldn't undo
+      // (or even surface as an error on) the profile save that just succeeded.
+      if (avatarUrl && previousAvatarUrl) {
+        deleteAvatar(previousAvatarUrl).catch((err: unknown) => {
+          console.error('Failed to delete previous avatar', err)
+        })
+      }
 
       setPendingAvatarFile(null)
       if (previewUrl) {
@@ -151,12 +161,17 @@ export function ProfilePage() {
                 disabled
                 helperText="Contact support to change your email"
               />
+
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={saving || !hasChanges}
+                sx={{ alignSelf: 'flex-start' }}
+              >
+                {saving ? <CircularProgress size={20} color="inherit" /> : 'Save changes'}
+              </Button>
             </Stack>
           </Stack>
-
-          <Button type="submit" variant="contained" disabled={saving || !hasChanges} sx={{ alignSelf: 'flex-start' }}>
-            {saving ? <CircularProgress size={20} color="inherit" /> : 'Save changes'}
-          </Button>
         </Stack>
       </Paper>
     </Container>

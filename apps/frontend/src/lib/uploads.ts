@@ -1,4 +1,4 @@
-import { apiPost } from './api'
+import { apiDelete, apiPost } from './api'
 
 interface PresignResponse {
   uploadUrl: string
@@ -29,4 +29,9 @@ export async function uploadFile(file: File, kind: 'video' | 'thumbnail' | 'avat
   }
 
   return publicUrl
+}
+
+/** Deletes a previous avatar from R2 so a user never accumulates more than one. Best-effort. */
+export async function deleteAvatar(avatarUrl: string): Promise<void> {
+  await apiDelete('/api/uploads/avatar', { avatarUrl })
 }

@@ -18,14 +18,16 @@ export function Header() {
       sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}
     >
       <Toolbar sx={{ justifyContent: 'space-between' }}>
-        <Typography
-          variant="h6"
+        <Box
           component={RouterLink}
           to="/"
-          sx={{ fontWeight: 700, color: 'inherit', textDecoration: 'none' }}
+          sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'inherit', textDecoration: 'none' }}
         >
-          Sold
-        </Typography>
+          <Box component="img" src="/favicon.png" alt="" sx={{ width: 28, height: 28 }} />
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            Sold
+          </Typography>
+        </Box>
 
         {user && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
