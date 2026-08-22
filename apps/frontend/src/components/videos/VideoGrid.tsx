@@ -15,11 +15,14 @@ interface VideoGridProps {
 export function VideoGrid({ videos, onVideoClick }: VideoGridProps) {
   const [page, setPage] = useState(1)
   const pageCount = Math.max(1, Math.ceil(videos.length / PAGE_SIZE))
+  // videos changes wholesale on a new search/filter -- clamp rather than
+  // risk landing on a now-empty page (e.g. filtering while on page 2).
+  const safePage = Math.min(page, pageCount)
 
   const pageVideos = useMemo(() => {
-    const start = (page - 1) * PAGE_SIZE
+    const start = (safePage - 1) * PAGE_SIZE
     return videos.slice(start, start + PAGE_SIZE)
-  }, [videos, page])
+  }, [videos, safePage])
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -34,7 +37,7 @@ export function VideoGrid({ videos, onVideoClick }: VideoGridProps) {
       {pageCount > 1 && (
         <Pagination
           count={pageCount}
-          page={page}
+          page={safePage}
           onChange={(_, value) => setPage(value)}
           sx={{ alignSelf: 'center' }}
         />
