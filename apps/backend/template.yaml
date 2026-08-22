@@ -51,13 +51,13 @@ Resources:
           R2_SECRET_ACCESS_KEY: !Ref R2SecretAccessKey
           R2_BUCKET_NAME: !Ref R2BucketName
           R2_PUBLIC_URL: !Ref R2PublicUrl
+      # CORS is handled entirely by the Express app's own cors() middleware
+      # (see apps/backend/src/app.ts) -- do not also configure Cors here.
+      # A Function URL's own CORS layer stacks its own Access-Control-Allow-Origin
+      # header on top of the app's, and browsers reject a response carrying two
+      # values for that header.
       FunctionUrlConfig:
         AuthType: NONE
-        Cors:
-          AllowOrigins:
-            - '*' # tighten to your deployed frontend origin(s) once you have them
-          AllowMethods: ['GET', 'POST']
-          AllowHeaders: ['content-type', 'authorization']
 
 Outputs:
   FunctionUrl:
