@@ -102,8 +102,23 @@ VITE_SUPABASE_ANON_KEY
 VITE_API_URL     <- the Lambda Function URL from step 5
 ```
 
-Vercel deploys automatically on push once connected — no custom GitHub Action
-needed for the frontend.
+**Production tracks a dedicated `release` branch, not `main`** — this is what
+keeps Production from redeploying on every ordinary merge to `main` (Preview
+still redeploys on every branch/PR push, that part needs no changes). Set
+this up once:
+
+- Settings -> Environments -> **Production** -> Branch Tracking -> change
+  from `main` to `release` (the branch doesn't need to exist yet -- Vercel
+  will just have no deployments there until something pushes to it)
+- Settings -> Build and Deployment -> Ignored Build Step -> leave as
+  **Automatic** (don't use "Only build preview" here -- it also blocks
+  deployments triggered by pushing to `release`, not just ones from `main`)
+
+Promoting to prod (see `deploy-backend.yml`) fast-forwards `release` to
+whatever's currently on `main` as its last step, which is what actually
+triggers the Vercel Production build -- Vercel deploys on that push exactly
+the way it always deploys on a push to its tracked branch, no webhook or
+custom script involved.
 
 ### 7. Loop back — tighten CORS
 
@@ -115,7 +130,11 @@ Once you have real Vercel URLs, go back and:
 
 ## Day to day
 
-- Open a PR -> `ci.yml` runs lint + build on both workspaces
-- Merge to `main` -> backend redeploys to dev automatically, Vercel redeploys
-  its Production/Preview targets per its own branch config
-- Promote to prod -> Actions tab -> "Deploy Backend" -> Run workflow
+- Open a PR -> `ci.yml` runs lint + build on both workspaces; Vercel also
+  builds a Preview deployment for the branch
+- Merge to `main` -> backend redeploys to dev automatically; Vercel Preview
+  redeploys too, but **Production doesn't move** (it tracks `release`, not
+  `main`)
+- Promote to prod -> Actions tab -> "Deploy Backend" -> Run workflow ->
+  deploys the backend to prod, then fast-forwards `release` to `main`,
+  which triggers Vercel's Production deploy
