@@ -9,3 +9,6 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+/** The frontend's package.json version, injected at build time (see vite.config.ts). */
+declare const __APP_VERSION__: string

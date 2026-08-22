@@ -5,7 +5,7 @@ import Button from '@mui/material/Button'
 import Toolbar from '@mui/material/Toolbar'
 import Typography from '@mui/material/Typography'
 import { useAuth } from '../../context/useAuth'
-import { logOut } from '../../lib/auth'
+import { UserMenu } from './UserMenu'
 
 export function Header() {
   const { user } = useAuth()
@@ -32,12 +32,7 @@ export function Header() {
             <Button component={RouterLink} to="/upload" variant="contained" size="small">
               Upload
             </Button>
-            <Typography color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
-              {user.name || user.email}
-            </Typography>
-            <Button variant="outlined" size="small" onClick={() => logOut()}>
-              Log out
-            </Button>
+            <UserMenu user={user} />
           </Box>
         )}
       </Toolbar>

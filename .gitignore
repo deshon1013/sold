@@ -15,6 +15,9 @@ dist-ssr
 # AWS SAM build output
 .aws-sam/
 
+# Personal infra/CI-CD setup reference (not project source)
+CICD-SETUP-NOTES.md
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
