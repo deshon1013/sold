@@ -7,7 +7,7 @@ on:
 
 permissions:
   id-token: write
-  contents: read
+  contents: write
 
 jobs:
   deploy:
@@ -57,9 +57,11 @@ jobs:
               "R2BucketName=${{ secrets.R2_BUCKET_NAME }}" \
               "R2PublicUrl=${{ secrets.R2_PUBLIC_URL }}"
 
-      # Vercel Production only auto-builds on Preview deploys now (Ignored Build
-      # Step is set to "Only build preview") -- this is what actually promotes
-      # the frontend, in lockstep with the backend prod deploy above.
-      - name: trigger Vercel Production deploy
+      # Vercel's Production environment tracks a dedicated "release" branch
+      # (not main), so pushes to main only ever build Preview. Fast-forwarding
+      # release to whatever's on main now is what actually promotes the
+      # frontend, in lockstep with the backend prod deploy above -- Vercel
+      # deploys Production automatically on the push, same as it always does.
+      - name: promote frontend to Vercel Production
         if: github.event_name == 'workflow_dispatch'
-        run: curl -fsS -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}"
+        run: git push origin HEAD:release --force
