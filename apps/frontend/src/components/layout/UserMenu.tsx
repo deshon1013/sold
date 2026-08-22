@@ -3,6 +3,7 @@ import type { MouseEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
+import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined'
 import LogoutIcon from '@mui/icons-material/Logout'
 import PersonOutlineIcon from '@mui/icons-material/PersonOutlineOutlined'
 import Avatar from '@mui/material/Avatar'
@@ -18,6 +19,7 @@ import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
 import Switch from '@mui/material/Switch'
 import Typography from '@mui/material/Typography'
+import { useThemeMode } from '../../context/useThemeMode'
 import { getInitials } from '../../lib/avatar'
 import { logOut } from '../../lib/auth'
 import type { User } from '../../types/user'
@@ -30,9 +32,7 @@ export function UserMenu({ user }: UserMenuProps) {
   const navigate = useNavigate()
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
   const [aboutOpen, setAboutOpen] = useState(false)
-  // Just the toggle for now -- wiring this to an actual theme provider is
-  // coming in a separate branch alongside the rest of the theme work.
-  const [darkMode, setDarkMode] = useState(false)
+  const { mode, toggleMode } = useThemeMode()
 
   function closeMenu() {
     setAnchorEl(null)
@@ -88,13 +88,13 @@ export function UserMenu({ user }: UserMenuProps) {
 
         <MenuItem onClick={(event) => event.stopPropagation()} sx={{ justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <DarkModeOutlinedIcon fontSize="small" />
-            <ListItemText>Dark mode</ListItemText>
+            {mode === 'dark' ? <LightModeOutlinedIcon fontSize="small" /> : <DarkModeOutlinedIcon fontSize="small" />}
+            <ListItemText>{mode === 'dark' ? 'Light mode' : 'Dark mode'}</ListItemText>
           </Box>
           <Switch
             size="small"
-            checked={darkMode}
-            onChange={(event) => setDarkMode(event.target.checked)}
+            checked={mode === 'dark'}
+            onChange={toggleMode}
             slotProps={{ input: { 'aria-label': 'Toggle dark mode' } }}
           />
         </MenuItem>
@@ -110,9 +110,9 @@ export function UserMenu({ user }: UserMenuProps) {
 
         <MenuItem onClick={handleLogout}>
           <ListItemIcon>
-            <LogoutIcon fontSize="small" />
+            <LogoutIcon fontSize="small" color="error" />
           </ListItemIcon>
-          <ListItemText>Log out</ListItemText>
+          <ListItemText slotProps={{ primary: { color: 'error' } }}>Log out</ListItemText>
         </MenuItem>
       </Menu>
 

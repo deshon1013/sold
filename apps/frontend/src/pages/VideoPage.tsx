@@ -229,7 +229,14 @@ function VideoPageContent({ id }: { id: string }) {
                 />
               )}
             </Box>
-            <Button component="label" variant="outlined" size="small" startIcon={<PhotoCameraOutlinedIcon />} disabled={savingEdit}>
+            <Button
+              component="label"
+              variant="outlined"
+              color="inherit"
+              size="small"
+              startIcon={<PhotoCameraOutlinedIcon />}
+              disabled={savingEdit}
+            >
               Change thumbnail
               <input type="file" accept="image/*" hidden onChange={handleThumbnailChange} />
             </Button>
@@ -239,7 +246,7 @@ function VideoPageContent({ id }: { id: string }) {
             <Button type="submit" variant="contained" disabled={savingEdit}>
               {savingEdit ? <CircularProgress size={20} color="inherit" /> : 'Save changes'}
             </Button>
-            <Button variant="outlined" onClick={cancelEditing} disabled={savingEdit}>
+            <Button variant="outlined" color="inherit" onClick={cancelEditing} disabled={savingEdit}>
               Cancel
             </Button>
           </Stack>
@@ -253,10 +260,10 @@ function VideoPageContent({ id }: { id: string }) {
 
             {isOwner && (
               <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0 }}>
-                <IconButton size="small" aria-label="Edit video" onClick={startEditing}>
+                <IconButton size="small" aria-label="Edit video" onClick={startEditing} sx={{ color: 'text.primary' }}>
                   <EditOutlinedIcon fontSize="small" />
                 </IconButton>
-                <IconButton size="small" aria-label="Delete video" onClick={() => setDeleteDialogOpen(true)}>
+                <IconButton size="small" aria-label="Delete video" color="error" onClick={() => setDeleteDialogOpen(true)}>
                   <DeleteOutlineOutlinedIcon fontSize="small" />
                 </IconButton>
               </Stack>

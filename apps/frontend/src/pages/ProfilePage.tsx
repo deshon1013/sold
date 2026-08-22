@@ -105,7 +105,7 @@ export function ProfilePage() {
         Profile
       </Typography>
 
-      <Paper variant="outlined" sx={{ p: 4, mt: 2 }}>
+      <Paper elevation={2} sx={{ p: 4, mt: 2 }}>
         <Stack component="form" onSubmit={handleSave} noValidate spacing={3}>
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
