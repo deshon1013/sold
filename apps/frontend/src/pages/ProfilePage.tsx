@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ChangeEvent, SubmitEvent } from 'react'
 import PhotoCameraOutlinedIcon from '@mui/icons-material/PhotoCameraOutlined'
 import Alert from '@mui/material/Alert'
@@ -23,51 +23,69 @@ export function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [name, setName] = useState(user?.name ?? '')
-  const [nameError, setNameError] = useState<string | null>(null)
-  const [savingName, setSavingName] = useState(false)
-  const [nameSaved, setNameSaved] = useState(false)
+  // Picking a photo only stages it locally -- it's uploaded together with
+  // the rest of the form when "Save changes" is pressed, so a picture-only
+  // change and a name-only change both go through the same single action.
+  const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
-  const [avatarUploading, setAvatarUploading] = useState(false)
-  const [avatarError, setAvatarError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [saved, setSaved] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl)
+    }
+  }, [previewUrl])
 
   if (!user) return null
 
-  async function handleAvatarChange(event: ChangeEvent<HTMLInputElement>) {
+  const nameChanged = name.trim() !== '' && name.trim() !== user.name
+  const hasChanges = nameChanged || !!pendingAvatarFile
+
+  function handleAvatarChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
-    event.target.value = '' // allow re-selecting the same file next time
+    event.target.value = '' // allow re-selecting the same file later
     if (!file) return
 
-    setAvatarError(null)
-    setAvatarUploading(true)
-    try {
-      const avatarUrl = await uploadFile(file, 'avatar')
-      await updateProfile({ avatarUrl })
-    } catch (err) {
-      setAvatarError(err instanceof Error ? err.message : 'Could not update your avatar.')
-    } finally {
-      setAvatarUploading(false)
-    }
+    if (previewUrl) URL.revokeObjectURL(previewUrl)
+    setPendingAvatarFile(file)
+    setPreviewUrl(URL.createObjectURL(file))
+    setSaved(false)
+    setError(null)
   }
 
-  async function handleSaveName(event: SubmitEvent) {
+  async function handleSave(event: SubmitEvent) {
     event.preventDefault()
-    setNameSaved(false)
+    setSaved(false)
 
     const trimmed = name.trim()
     if (!trimmed) {
-      setNameError('Name is required')
+      setError('Name is required')
       return
     }
 
-    setNameError(null)
-    setSavingName(true)
+    setError(null)
+    setSaving(true)
     try {
-      await updateProfile({ name: trimmed })
-      setNameSaved(true)
+      const avatarUrl = pendingAvatarFile ? await uploadFile(pendingAvatarFile, 'avatar') : undefined
+
+      await updateProfile({
+        ...(nameChanged ? { name: trimmed } : {}),
+        ...(avatarUrl ? { avatarUrl } : {}),
+      })
+
+      setPendingAvatarFile(null)
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl)
+        setPreviewUrl(null)
+      }
+      setSaved(true)
     } catch (err) {
-      setNameError(err instanceof Error ? err.message : 'Could not save your name.')
+      setError(err instanceof Error ? err.message : 'Could not save your changes.')
     } finally {
-      setSavingName(false)
+      setSaving(false)
     }
   }
 
@@ -78,70 +96,50 @@ export function ProfilePage() {
       </Typography>
 
       <Paper variant="outlined" sx={{ p: 4, mt: 2 }}>
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={4}
-          sx={{ alignItems: { xs: 'center', sm: 'flex-start' } }}
-        >
-          <Box sx={{ position: 'relative', flexShrink: 0 }}>
-            <Avatar src={user.avatarUrl} sx={{ width: 140, height: 140, fontSize: 48 }}>
-              {getInitials(user)}
-            </Avatar>
+        <Stack component="form" onSubmit={handleSave} noValidate spacing={3}>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={4}
+            sx={{ alignItems: { xs: 'center', sm: 'flex-start' } }}
+          >
+            <Box sx={{ position: 'relative', flexShrink: 0 }}>
+              <Avatar src={previewUrl ?? user.avatarUrl} sx={{ width: 140, height: 140, fontSize: 48 }}>
+                {getInitials(user)}
+              </Avatar>
 
-            {avatarUploading && (
-              <Box
+              <IconButton
+                onClick={() => fileInputRef.current?.click()}
+                disabled={saving}
+                size="small"
+                aria-label="Change avatar"
                 sx={{
                   position: 'absolute',
-                  inset: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  bgcolor: 'rgba(0, 0, 0, 0.4)',
-                  borderRadius: '50%',
+                  bottom: 0,
+                  right: 0,
+                  bgcolor: 'background.paper',
+                  border: 1,
+                  borderColor: 'divider',
+                  '&:hover': { bgcolor: 'background.paper' },
                 }}
               >
-                <CircularProgress size={32} sx={{ color: 'common.white' }} />
-              </Box>
-            )}
+                <PhotoCameraOutlinedIcon fontSize="small" />
+              </IconButton>
 
-            <IconButton
-              onClick={() => fileInputRef.current?.click()}
-              disabled={avatarUploading}
-              size="small"
-              aria-label="Change avatar"
-              sx={{
-                position: 'absolute',
-                bottom: 0,
-                right: 0,
-                bgcolor: 'background.paper',
-                border: 1,
-                borderColor: 'divider',
-                '&:hover': { bgcolor: 'background.paper' },
-              }}
-            >
-              <PhotoCameraOutlinedIcon fontSize="small" />
-            </IconButton>
+              <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handleAvatarChange} />
+            </Box>
 
-            <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handleAvatarChange} />
-          </Box>
-
-          <Stack spacing={2} sx={{ flex: 1, width: '100%' }}>
-            {avatarError && <Alert severity="error">{avatarError}</Alert>}
-
-            <Stack component="form" spacing={2} onSubmit={handleSaveName} noValidate>
-              {nameError && <Alert severity="error">{nameError}</Alert>}
-              {nameSaved && <Alert severity="success">Saved.</Alert>}
+            <Stack spacing={2} sx={{ flex: 1, width: '100%' }}>
+              {error && <Alert severity="error">{error}</Alert>}
+              {saved && <Alert severity="success">Saved.</Alert>}
 
               <TextField
                 label="Name"
                 value={name}
                 onChange={(event) => {
                   setName(event.target.value)
-                  setNameError(null)
-                  setNameSaved(false)
+                  setError(null)
+                  setSaved(false)
                 }}
-                error={!!nameError}
-                helperText={nameError}
                 fullWidth
                 required
               />
@@ -153,17 +151,12 @@ export function ProfilePage() {
                 disabled
                 helperText="Contact support to change your email"
               />
-
-              <Button
-                type="submit"
-                variant="contained"
-                disabled={savingName || name.trim() === user.name}
-                sx={{ alignSelf: 'flex-start' }}
-              >
-                {savingName ? <CircularProgress size={20} color="inherit" /> : 'Save changes'}
-              </Button>
             </Stack>
           </Stack>
+
+          <Button type="submit" variant="contained" disabled={saving || !hasChanges} sx={{ alignSelf: 'flex-start' }}>
+            {saving ? <CircularProgress size={20} color="inherit" /> : 'Save changes'}
+          </Button>
         </Stack>
       </Paper>
     </Container>
