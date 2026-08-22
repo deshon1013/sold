@@ -8,6 +8,7 @@ import { Layout } from './components/layout/Layout'
 import { useAuth } from './context/useAuth'
 import { logIn, signUp } from './lib/auth'
 import { HomePage } from './pages/HomePage'
+import { ProfilePage } from './pages/ProfilePage'
 import { UploadPage } from './pages/UploadPage'
 import { VideoPage } from './pages/VideoPage'
 import type { LoginFormValues, SignUpFormValues } from './types/user'
@@ -39,6 +40,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/upload" element={<UploadPage />} />
           <Route path="/videos/:id" element={<VideoPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       ) : (
