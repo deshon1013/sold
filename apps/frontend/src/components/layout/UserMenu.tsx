@@ -18,18 +18,12 @@ import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
 import Switch from '@mui/material/Switch'
 import Typography from '@mui/material/Typography'
+import { getInitials } from '../../lib/avatar'
 import { logOut } from '../../lib/auth'
 import type { User } from '../../types/user'
 
 interface UserMenuProps {
   user: User
-}
-
-function getInitials({ name, email }: User): string {
-  const source = name.trim() || email
-  const parts = source.split(/\s+/)
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
-  return source.slice(0, 2).toUpperCase()
 }
 
 export function UserMenu({ user }: UserMenuProps) {
@@ -67,7 +61,9 @@ export function UserMenu({ user }: UserMenuProps) {
         aria-label="Account menu"
         aria-haspopup="menu"
       >
-        <Avatar sx={{ width: 32, height: 32, fontSize: 14 }}>{getInitials(user)}</Avatar>
+        <Avatar src={user.avatarUrl} sx={{ width: 32, height: 32, fontSize: 14 }}>
+          {getInitials(user)}
+        </Avatar>
       </IconButton>
 
       <Menu anchorEl={anchorEl} open={!!anchorEl} onClose={closeMenu}>

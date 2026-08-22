@@ -1,4 +1,4 @@
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import { DeleteObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
 const accountId = process.env.R2_ACCOUNT_ID
@@ -31,4 +31,14 @@ export async function createPresignedUploadUrl(key: string, contentType: string)
 /** The permanent, public URL for an object once uploaded (bucket must have public access enabled). */
 export function publicUrlFor(key: string): string {
   return `${PUBLIC_URL_BASE}/${key}`
+}
+
+/** The inverse of publicUrlFor -- recovers the object key from one of our own public URLs, or null if it isn't one. */
+export function keyFromPublicUrl(url: string): string | null {
+  if (!url.startsWith(`${PUBLIC_URL_BASE}/`)) return null
+  return url.slice(PUBLIC_URL_BASE.length + 1)
+}
+
+export async function deleteObject(key: string): Promise<void> {
+  await r2.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }))
 }

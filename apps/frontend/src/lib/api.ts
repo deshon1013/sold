@@ -8,13 +8,11 @@ async function authHeader(): Promise<Record<string, string>> {
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
-/** POSTs JSON to the Express backend, attaching the current Supabase session as a Bearer token. */
-export async function apiPost<T>(path: string, body: unknown): Promise<T> {
+async function request(path: string, init: RequestInit): Promise<Response> {
   const headers = await authHeader()
   const res = await fetch(`${API_URL}${path}`, {
-    method: 'POST',
+    ...init,
     headers: { 'Content-Type': 'application/json', ...headers },
-    body: JSON.stringify(body),
   })
 
   if (!res.ok) {
@@ -25,5 +23,16 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
     throw new Error(message ?? `Request failed: ${res.status}`)
   }
 
+  return res
+}
+
+/** POSTs JSON to the Express backend, attaching the current Supabase session as a Bearer token. */
+export async function apiPost<T>(path: string, body: unknown): Promise<T> {
+  const res = await request(path, { method: 'POST', body: JSON.stringify(body) })
   return res.json() as Promise<T>
+}
+
+/** DELETEs against the Express backend, attaching the current Supabase session as a Bearer token. */
+export async function apiDelete(path: string, body: unknown): Promise<void> {
+  await request(path, { method: 'DELETE', body: JSON.stringify(body) })
 }

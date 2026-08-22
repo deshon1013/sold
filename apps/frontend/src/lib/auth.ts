@@ -8,6 +8,8 @@ function toUser(supabaseUser: SupabaseUser): User {
     name: typeof supabaseUser.user_metadata.name === 'string' ? supabaseUser.user_metadata.name : '',
     email: supabaseUser.email ?? '',
     createdAt: supabaseUser.created_at,
+    avatarUrl:
+      typeof supabaseUser.user_metadata.avatar_url === 'string' ? supabaseUser.user_metadata.avatar_url : undefined,
   }
 }
 
@@ -35,6 +37,22 @@ export async function logIn({ email, password }: LoginFormValues): Promise<User>
 export async function logOut(): Promise<void> {
   const { error } = await supabase.auth.signOut()
   if (error) throw new Error(error.message)
+}
+
+export interface ProfileUpdate {
+  name?: string
+  avatarUrl?: string
+}
+
+/** Updates name/avatar in the user's own metadata. `onAuthChange` picks up the result automatically. */
+export async function updateProfile(update: ProfileUpdate): Promise<User> {
+  const data: Record<string, string> = {}
+  if (update.name !== undefined) data.name = update.name
+  if (update.avatarUrl !== undefined) data.avatar_url = update.avatarUrl
+
+  const { data: result, error } = await supabase.auth.updateUser({ data })
+  if (error) throw new Error(error.message)
+  return toUser(result.user)
 }
 
 /** Reads the current session (e.g. restored from storage on page load). */
