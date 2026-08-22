@@ -56,3 +56,10 @@ jobs:
               "R2SecretAccessKey=${{ secrets.R2_SECRET_ACCESS_KEY }}" \
               "R2BucketName=${{ secrets.R2_BUCKET_NAME }}" \
               "R2PublicUrl=${{ secrets.R2_PUBLIC_URL }}"
+
+      # Vercel Production only auto-builds on Preview deploys now (Ignored Build
+      # Step is set to "Only build preview") -- this is what actually promotes
+      # the frontend, in lockstep with the backend prod deploy above.
+      - name: trigger Vercel Production deploy
+        if: github.event_name == 'workflow_dispatch'
+        run: curl -fsS -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}"
