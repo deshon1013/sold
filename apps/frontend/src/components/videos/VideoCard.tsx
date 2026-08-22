@@ -12,6 +12,7 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import { getInitials } from '../../lib/avatar'
 import { relativeTime } from '../../lib/relativeTime'
+import { SHADOW_TINT_DARK } from '../../theme'
 import type { Video } from '../../types/video'
 
 interface VideoCardProps {
@@ -21,7 +22,32 @@ interface VideoCardProps {
 
 export function VideoCard({ video, onClick }: VideoCardProps) {
   return (
-    <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Card
+      elevation={0}
+      sx={(theme) => {
+        const isDark = theme.palette.mode === 'dark'
+        const tint = isDark ? SHADOW_TINT_DARK : '31, 35, 40'
+        // A white glow reads far brighter/bigger than a charcoal one at the
+        // same size -- dark mode gets a tighter, dimmer version.
+        const boxShadow = isDark
+          ? `0px 1px 3px rgba(${tint}, 0.05), 0px 4px 10px rgba(${tint}, 0.07)`
+          : `0px 2px 6px rgba(${tint}, 0.12), 0px 10px 24px rgba(${tint}, 0.18)`
+        const hoverBoxShadow = isDark
+          ? `0px 2px 5px rgba(${tint}, 0.07), 0px 6px 14px rgba(${tint}, 0.1)`
+          : `0px 4px 10px rgba(${tint}, 0.16), 0px 14px 30px rgba(${tint}, 0.24)`
+        return {
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow,
+          transition: theme.transitions.create(['transform', 'box-shadow']),
+          '&:hover': {
+            transform: 'scale(1.03)',
+            boxShadow: hoverBoxShadow,
+          },
+        }
+      }}
+    >
       <CardActionArea
         onClick={() => onClick?.(video)}
         sx={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', height: '100%' }}

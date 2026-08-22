@@ -92,7 +92,7 @@ export function UploadPage() {
 
   return (
     <Container maxWidth="sm" sx={{ flex: 1, py: 4 }}>
-      <Paper variant="outlined" sx={{ p: 4 }}>
+      <Paper elevation={2} sx={{ p: 4 }}>
         <Typography variant="h5" component="h1" sx={{ fontWeight: 600 }} gutterBottom>
           Upload a clip
         </Typography>
@@ -129,7 +129,7 @@ export function UploadPage() {
           />
 
           <Box>
-            <Button component="label" variant="outlined" startIcon={<UploadFileIcon />} disabled={submitting}>
+            <Button component="label" variant="outlined" color="inherit" startIcon={<UploadFileIcon />} disabled={submitting}>
               {videoFile ? videoFile.name : 'Choose video'}
               <input type="file" accept="video/*" hidden onChange={handleVideoChange} />
             </Button>
@@ -141,7 +141,7 @@ export function UploadPage() {
           </Box>
 
           <Box>
-            <Button component="label" variant="outlined" startIcon={<UploadFileIcon />} disabled={submitting}>
+            <Button component="label" variant="outlined" color="inherit" startIcon={<UploadFileIcon />} disabled={submitting}>
               {thumbnailFile ? thumbnailFile.name : 'Choose thumbnail (optional)'}
               <input type="file" accept="image/*" hidden onChange={handleThumbnailChange} />
             </Button>
