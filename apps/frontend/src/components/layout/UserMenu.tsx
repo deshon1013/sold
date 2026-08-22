@@ -62,7 +62,7 @@ export function UserMenu({ user }: UserMenuProps) {
         aria-haspopup="menu"
       >
         <Avatar src={user.avatarUrl} sx={{ width: 32, height: 32, fontSize: 14 }}>
-          {getInitials(user)}
+          {getInitials(user.name || user.email)}
         </Avatar>
       </IconButton>
 

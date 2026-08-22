@@ -1,6 +1,7 @@
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutlineOutlined'
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutlined'
 import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined'
+import Avatar from '@mui/material/Avatar'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import CardActionArea from '@mui/material/CardActionArea'
@@ -9,6 +10,7 @@ import CardMedia from '@mui/material/CardMedia'
 import Chip from '@mui/material/Chip'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
+import { getInitials } from '../../lib/avatar'
 import { relativeTime } from '../../lib/relativeTime'
 import type { Video } from '../../types/video'
 
@@ -64,9 +66,14 @@ export function VideoCard({ video, onClick }: VideoCardProps) {
 
           <Chip label={video.gameTitle} size="small" variant="outlined" sx={{ mb: 1 }} />
 
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            {video.uploadedBy} · {relativeTime(video.createdAt)}
-          </Typography>
+          <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center', mb: 1 }}>
+            <Avatar src={video.uploadedByAvatarUrl} sx={{ width: 20, height: 20, fontSize: 10 }}>
+              {getInitials(video.uploadedBy)}
+            </Avatar>
+            <Typography variant="body2" color="text.secondary">
+              {video.uploadedBy} · {relativeTime(video.createdAt)}
+            </Typography>
+          </Stack>
 
           <Stack direction="row" spacing={2} sx={{ color: 'text.secondary' }}>
             <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>

@@ -4,7 +4,9 @@ export interface Video {
   gameTitle: string
   videoUrl: string
   createdAt: string
+  uploadedById: string
   uploadedBy: string
+  uploadedByAvatarUrl?: string
   likeCount: number
   commentCount: number
   thumbnailUrl?: string

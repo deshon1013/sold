@@ -13,6 +13,7 @@ import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import { useAuth } from '../context/useAuth'
 import { uploadFile } from '../lib/uploads'
+import { captureVideoFrame } from '../lib/videoFrame'
 import { insertVideo } from '../lib/videos'
 
 type FieldErrors = { title?: string; gameTitle?: string; videoFile?: string }
@@ -65,9 +66,12 @@ export function UploadPage() {
       const videoUrl = await uploadFile(videoFile!, 'video')
 
       let thumbnailUrl: string | undefined
-      if (thumbnailFile) {
+      // No thumbnail picked -- fall back to a still frame captured from the
+      // video itself rather than leaving the video with no thumbnail at all.
+      const fileToUpload = thumbnailFile ?? (await captureVideoFrame(videoFile!))
+      if (fileToUpload) {
         setStatus('thumbnail')
-        thumbnailUrl = await uploadFile(thumbnailFile, 'thumbnail')
+        thumbnailUrl = await uploadFile(fileToUpload, 'thumbnail')
       }
 
       setStatus('saving')
@@ -77,7 +81,6 @@ export function UploadPage() {
         videoUrl,
         thumbnailUrl,
         uploadedBy: user.id,
-        uploadedByName: user.name || user.email,
       })
 
       navigate(`/videos/${video.id}`)

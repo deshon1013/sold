@@ -13,6 +13,10 @@ const CONTENT_TYPE_PATTERN: Record<UploadKind, RegExp> = {
   avatar: /^image\//,
 }
 
+function isUploadKind(value: unknown): value is UploadKind {
+  return typeof value === 'string' && value in CONTENT_TYPE_PATTERN
+}
+
 interface PresignRequestBody {
   fileName?: string
   contentType?: string
@@ -22,7 +26,7 @@ interface PresignRequestBody {
 uploadsRouter.post('/presign', requireAuth, async (req, res) => {
   const { fileName, contentType, kind } = req.body as PresignRequestBody
 
-  if (!fileName || !contentType || !kind || !(kind in CONTENT_TYPE_PATTERN)) {
+  if (!fileName || !contentType || !isUploadKind(kind)) {
     res.status(400).json({ error: 'fileName, contentType, and kind ("video" | "thumbnail" | "avatar") are required' })
     return
   }
@@ -44,26 +48,27 @@ uploadsRouter.post('/presign', requireAuth, async (req, res) => {
   }
 })
 
-interface DeleteAvatarRequestBody {
-  avatarUrl?: string
+interface DeleteFileRequestBody {
+  url?: string
+  kind?: UploadKind
 }
 
-// Users only ever have one avatar -- the frontend calls this with the *previous*
-// avatarUrl right after a new one is saved, so the old file doesn't just pile up.
-uploadsRouter.delete('/avatar', requireAuth, async (req, res) => {
-  const { avatarUrl } = req.body as DeleteAvatarRequestBody
+// Deletes one of the caller's own files -- an old avatar being replaced, or a
+// video/thumbnail being removed (edited out or the video itself deleted).
+uploadsRouter.delete('/file', requireAuth, async (req, res) => {
+  const { url, kind } = req.body as DeleteFileRequestBody
 
-  if (!avatarUrl) {
-    res.status(400).json({ error: 'avatarUrl is required' })
+  if (!url || !isUploadKind(kind)) {
+    res.status(400).json({ error: 'url and kind ("video" | "thumbnail" | "avatar") are required' })
     return
   }
 
-  const key = keyFromPublicUrl(avatarUrl)
+  const key = keyFromPublicUrl(url)
 
-  // Scope check: only ever delete a file inside the caller's own avatar folder,
-  // never anything else, however this endpoint gets called.
-  if (!key || !key.startsWith(`avatars/${req.userId}/`)) {
-    res.status(400).json({ error: 'avatarUrl is not a deletable object' })
+  // Scope check: only ever delete a file inside the caller's own folder for
+  // that kind, never anything else, however this endpoint gets called.
+  if (!key || !key.startsWith(`${kind}s/${req.userId}/`)) {
+    res.status(400).json({ error: 'url is not a deletable object' })
     return
   }
 
@@ -71,7 +76,7 @@ uploadsRouter.delete('/avatar', requireAuth, async (req, res) => {
     await deleteObject(key)
     res.status(204).end()
   } catch (err) {
-    console.error('Failed to delete old avatar', err)
+    console.error('Failed to delete file', err)
     res.status(502).json({ error: 'Could not reach storage provider' })
   }
 })

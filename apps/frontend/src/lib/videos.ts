@@ -1,16 +1,21 @@
 import { supabase } from './supabase'
 import type { Video } from '../types/video'
 
+const VIDEO_SELECT = '*, profiles(name, avatar_url)'
+
 interface VideoRow {
   id: string
   title: string
   game_title: string
   video_url: string
   thumbnail_url: string | null
-  uploaded_by_name: string
+  uploaded_by: string
   like_count: number
   comment_count: number
   created_at: string
+  // A many-to-one embed (each video has exactly one uploader) -- PostgREST
+  // returns this as a single object, not an array.
+  profiles: { name: string; avatar_url: string | null } | null
 }
 
 function toVideo(row: VideoRow): Video {
@@ -20,7 +25,9 @@ function toVideo(row: VideoRow): Video {
     gameTitle: row.game_title,
     videoUrl: row.video_url,
     thumbnailUrl: row.thumbnail_url ?? undefined,
-    uploadedBy: row.uploaded_by_name,
+    uploadedById: row.uploaded_by,
+    uploadedBy: row.profiles?.name || 'Unknown',
+    uploadedByAvatarUrl: row.profiles?.avatar_url ?? undefined,
     likeCount: row.like_count,
     commentCount: row.comment_count,
     createdAt: row.created_at,
@@ -30,16 +37,16 @@ function toVideo(row: VideoRow): Video {
 export async function fetchVideos(): Promise<Video[]> {
   const { data, error } = await supabase
     .from('videos')
-    .select('*')
+    .select(VIDEO_SELECT)
     .order('created_at', { ascending: false })
   if (error) throw new Error(error.message)
-  return (data as VideoRow[]).map(toVideo)
+  return (data as unknown as VideoRow[]).map(toVideo)
 }
 
 export async function fetchVideoById(id: string): Promise<Video | null> {
-  const { data, error } = await supabase.from('videos').select('*').eq('id', id).maybeSingle()
+  const { data, error } = await supabase.from('videos').select(VIDEO_SELECT).eq('id', id).maybeSingle()
   if (error) throw new Error(error.message)
-  return data ? toVideo(data as VideoRow) : null
+  return data ? toVideo(data as unknown as VideoRow) : null
 }
 
 export interface NewVideoInput {
@@ -48,7 +55,6 @@ export interface NewVideoInput {
   videoUrl: string
   thumbnailUrl?: string
   uploadedBy: string
-  uploadedByName: string
 }
 
 export async function insertVideo(input: NewVideoInput): Promise<Video> {
@@ -60,10 +66,37 @@ export async function insertVideo(input: NewVideoInput): Promise<Video> {
       video_url: input.videoUrl,
       thumbnail_url: input.thumbnailUrl ?? null,
       uploaded_by: input.uploadedBy,
-      uploaded_by_name: input.uploadedByName,
     })
-    .select()
+    .select(VIDEO_SELECT)
     .single()
   if (error) throw new Error(error.message)
-  return toVideo(data as VideoRow)
+  return toVideo(data as unknown as VideoRow)
+}
+
+export interface VideoUpdateInput {
+  title?: string
+  gameTitle?: string
+  thumbnailUrl?: string
+}
+
+/** RLS only allows this to succeed for the video's own uploader. */
+export async function updateVideo(id: string, input: VideoUpdateInput): Promise<Video> {
+  const { data, error } = await supabase
+    .from('videos')
+    .update({
+      ...(input.title !== undefined ? { title: input.title } : {}),
+      ...(input.gameTitle !== undefined ? { game_title: input.gameTitle } : {}),
+      ...(input.thumbnailUrl !== undefined ? { thumbnail_url: input.thumbnailUrl } : {}),
+    })
+    .eq('id', id)
+    .select(VIDEO_SELECT)
+    .single()
+  if (error) throw new Error(error.message)
+  return toVideo(data as unknown as VideoRow)
+}
+
+/** RLS only allows this to succeed for the video's own uploader. Doesn't touch R2 -- see deleteFile(). */
+export async function deleteVideoRow(id: string): Promise<void> {
+  const { error } = await supabase.from('videos').delete().eq('id', id)
+  if (error) throw new Error(error.message)
 }

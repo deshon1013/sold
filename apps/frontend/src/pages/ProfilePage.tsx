@@ -15,7 +15,7 @@ import Typography from '@mui/material/Typography'
 import { useAuth } from '../context/useAuth'
 import { updateProfile } from '../lib/auth'
 import { getInitials } from '../lib/avatar'
-import { deleteAvatar, uploadFile } from '../lib/uploads'
+import { deleteFile, uploadFile } from '../lib/uploads'
 
 // TODO: rest of profile logic (bio, etc.) lands alongside the theme work in a separate branch.
 export function ProfilePage() {
@@ -81,7 +81,7 @@ export function ProfilePage() {
       // new one is safely saved. Best-effort: a failure here shouldn't undo
       // (or even surface as an error on) the profile save that just succeeded.
       if (avatarUrl && previousAvatarUrl) {
-        deleteAvatar(previousAvatarUrl).catch((err: unknown) => {
+        deleteFile(previousAvatarUrl, 'avatar').catch((err: unknown) => {
           console.error('Failed to delete previous avatar', err)
         })
       }
@@ -114,7 +114,7 @@ export function ProfilePage() {
           >
             <Box sx={{ position: 'relative', flexShrink: 0 }}>
               <Avatar src={previewUrl ?? user.avatarUrl} sx={{ width: 140, height: 140, fontSize: 48 }}>
-                {getInitials(user)}
+                {getInitials(user.name || user.email)}
               </Avatar>
 
               <IconButton
