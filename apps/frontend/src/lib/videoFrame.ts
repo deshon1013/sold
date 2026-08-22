@@ -8,8 +8,21 @@
 export async function captureVideoFrame(file: File): Promise<File | null> {
   const objectUrl = URL.createObjectURL(file)
 
+  // iOS Safari refuses to decode video frames for a <video> that isn't
+  // actually in the document -- mount it off-screen for the duration of the
+  // capture rather than leaving it detached (which is fine on desktop
+  // browsers, but silently produces a blank frame on iPhone).
+  const video = document.createElement('video')
+  video.style.position = 'fixed'
+  video.style.top = '0'
+  video.style.left = '0'
+  video.style.width = '1px'
+  video.style.height = '1px'
+  video.style.opacity = '0'
+  video.style.pointerEvents = 'none'
+  document.body.appendChild(video)
+
   try {
-    const video = document.createElement('video')
     video.src = objectUrl
     video.muted = true
     video.playsInline = true
@@ -49,6 +62,7 @@ export async function captureVideoFrame(file: File): Promise<File | null> {
     console.error('Failed to capture a video frame for the thumbnail', err)
     return null
   } finally {
+    video.remove()
     URL.revokeObjectURL(objectUrl)
   }
 }
