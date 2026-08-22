@@ -11,7 +11,7 @@ interface PresignResponse {
  * directly to R2 (the file never passes through our server). Returns the
  * file's permanent public URL.
  */
-export async function uploadFile(file: File, kind: 'video' | 'thumbnail'): Promise<string> {
+export async function uploadFile(file: File, kind: 'video' | 'thumbnail' | 'avatar'): Promise<string> {
   const { uploadUrl, publicUrl } = await apiPost<PresignResponse>('/api/uploads/presign', {
     fileName: file.name,
     contentType: file.type,

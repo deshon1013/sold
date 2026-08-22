@@ -4,6 +4,7 @@ export interface User {
   name: string
   email: string
   createdAt: string
+  avatarUrl?: string
 }
 
 /** Fields collected by the sign-up form. */

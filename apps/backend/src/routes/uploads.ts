@@ -5,11 +5,12 @@ import { requireAuth } from '../middleware/requireAuth.js'
 
 export const uploadsRouter = Router()
 
-type UploadKind = 'video' | 'thumbnail'
+type UploadKind = 'video' | 'thumbnail' | 'avatar'
 
 const CONTENT_TYPE_PATTERN: Record<UploadKind, RegExp> = {
   video: /^video\//,
   thumbnail: /^image\//,
+  avatar: /^image\//,
 }
 
 interface PresignRequestBody {
@@ -21,8 +22,8 @@ interface PresignRequestBody {
 uploadsRouter.post('/presign', requireAuth, async (req, res) => {
   const { fileName, contentType, kind } = req.body as PresignRequestBody
 
-  if (!fileName || !contentType || (kind !== 'video' && kind !== 'thumbnail')) {
-    res.status(400).json({ error: 'fileName, contentType, and kind ("video" | "thumbnail") are required' })
+  if (!fileName || !contentType || !kind || !(kind in CONTENT_TYPE_PATTERN)) {
+    res.status(400).json({ error: 'fileName, contentType, and kind ("video" | "thumbnail" | "avatar") are required' })
     return
   }
 
