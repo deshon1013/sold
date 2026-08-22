@@ -1,5 +1,7 @@
 import { apiDelete, apiPost } from './api'
 
+type UploadKind = 'video' | 'thumbnail' | 'avatar'
+
 interface PresignResponse {
   uploadUrl: string
   publicUrl: string
@@ -11,7 +13,7 @@ interface PresignResponse {
  * directly to R2 (the file never passes through our server). Returns the
  * file's permanent public URL.
  */
-export async function uploadFile(file: File, kind: 'video' | 'thumbnail' | 'avatar'): Promise<string> {
+export async function uploadFile(file: File, kind: UploadKind): Promise<string> {
   const { uploadUrl, publicUrl } = await apiPost<PresignResponse>('/api/uploads/presign', {
     fileName: file.name,
     contentType: file.type,
@@ -31,7 +33,7 @@ export async function uploadFile(file: File, kind: 'video' | 'thumbnail' | 'avat
   return publicUrl
 }
 
-/** Deletes a previous avatar from R2 so a user never accumulates more than one. Best-effort. */
-export async function deleteAvatar(avatarUrl: string): Promise<void> {
-  await apiDelete('/api/uploads/avatar', { avatarUrl })
+/** Deletes one of the caller's own files from R2 (an old avatar, a replaced thumbnail, a deleted video, ...). */
+export async function deleteFile(url: string, kind: UploadKind): Promise<void> {
+  await apiDelete('/api/uploads/file', { url, kind })
 }
