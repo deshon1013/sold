@@ -12,6 +12,7 @@ import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
+import { PageBreadcrumbs } from '../components/layout/PageBreadcrumbs'
 import { useAuth } from '../context/useAuth'
 import { updateProfile } from '../lib/auth'
 import { getInitials } from '../lib/avatar'
@@ -101,6 +102,7 @@ export function ProfilePage() {
 
   return (
     <Container maxWidth="sm" sx={{ flex: 1, py: 4 }}>
+      <PageBreadcrumbs current="Profile" />
       <Typography variant="h5" component="h1" sx={{ fontWeight: 600 }} gutterBottom>
         Profile
       </Typography>

@@ -3,9 +3,11 @@ import type { ChangeEvent, SubmitEvent } from 'react'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import ReactPlayer from 'react-player'
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutlineOutlined'
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined'
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import PhotoCameraOutlinedIcon from '@mui/icons-material/PhotoCameraOutlined'
+import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined'
 import Alert from '@mui/material/Alert'
 import Avatar from '@mui/material/Avatar'
 import Box from '@mui/material/Box'
@@ -18,10 +20,14 @@ import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
 import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
+import Divider from '@mui/material/Divider'
 import IconButton from '@mui/material/IconButton'
 import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
+import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
+import { useTheme } from '@mui/material/styles'
+import { PageBreadcrumbs } from '../components/layout/PageBreadcrumbs'
 import { useAuth } from '../context/useAuth'
 import { getInitials } from '../lib/avatar'
 import { relativeTime } from '../lib/relativeTime'
@@ -39,6 +45,7 @@ export function VideoPage() {
 function VideoPageContent({ id }: { id: string }) {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const isDarkMode = useTheme().palette.mode === 'dark'
 
   // undefined = still loading, null = fetched but not found
   const [video, setVideo] = useState<Video | null | undefined>(undefined)
@@ -65,6 +72,7 @@ function VideoPageContent({ id }: { id: string }) {
   if (error) {
     return (
       <Container maxWidth="md" sx={{ flex: 1, py: 4 }}>
+        <PageBreadcrumbs current="Video" />
         <Alert severity="error">{error}</Alert>
       </Container>
     )
@@ -81,6 +89,7 @@ function VideoPageContent({ id }: { id: string }) {
   if (video === null) {
     return (
       <Container maxWidth="md" sx={{ flex: 1, py: 4 }}>
+        <PageBreadcrumbs current="Video not found" />
         <Alert severity="warning">That video doesn't exist, or was deleted.</Alert>
       </Container>
     )
@@ -183,6 +192,7 @@ function VideoPageContent({ id }: { id: string }) {
 
   return (
     <Container maxWidth="md" sx={{ flex: 1, py: 4 }}>
+      <PageBreadcrumbs current={video.title} />
       <Box sx={{ aspectRatio: '16 / 9', bgcolor: 'common.black', borderRadius: 1, overflow: 'hidden', mb: 2 }}>
         <ReactPlayer src={video.videoUrl} controls width="100%" height="100%" />
       </Box>
@@ -260,12 +270,21 @@ function VideoPageContent({ id }: { id: string }) {
 
             {isOwner && (
               <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0 }}>
-                <IconButton size="small" aria-label="Edit video" onClick={startEditing} sx={{ color: 'text.primary' }}>
-                  <EditOutlinedIcon fontSize="small" />
-                </IconButton>
-                <IconButton size="small" aria-label="Delete video" color="error" onClick={() => setDeleteDialogOpen(true)}>
-                  <DeleteOutlineOutlinedIcon fontSize="small" />
-                </IconButton>
+                <Tooltip title="Edit">
+                  <IconButton size="small" aria-label="Edit video" onClick={startEditing} sx={{ color: 'text.primary' }}>
+                    <EditOutlinedIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Delete">
+                  <IconButton
+                    size="small"
+                    aria-label="Delete video"
+                    color="error"
+                    onClick={() => setDeleteDialogOpen(true)}
+                  >
+                    <DeleteOutlineOutlinedIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
               </Stack>
             )}
           </Stack>
@@ -278,6 +297,22 @@ function VideoPageContent({ id }: { id: string }) {
             <Typography variant="body2" color="text.secondary">
               {video.uploadedBy} · {relativeTime(video.createdAt)}
             </Typography>
+          </Stack>
+
+          <Divider sx={{ my: 2 }} />
+
+          <Stack direction="row" spacing={1}>
+            <Button variant="outlined" color="inherit" size="small" startIcon={<ThumbUpOutlinedIcon fontSize="small" />}>
+              {video.likeCount}
+            </Button>
+            <Button
+              variant="outlined"
+              color="inherit"
+              size="small"
+              startIcon={<ChatBubbleOutlineIcon fontSize="small" />}
+            >
+              {video.commentCount}
+            </Button>
           </Stack>
         </>
       )}
@@ -293,10 +328,34 @@ function VideoPageContent({ id }: { id: string }) {
           <DialogContentText>This can't be undone.</DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
+          <Button
+            variant={isDarkMode ? 'outlined' : 'contained'}
+            color={isDarkMode ? 'inherit' : undefined}
+            onClick={() => setDeleteDialogOpen(false)}
+            disabled={deleting}
+            sx={
+              isDarkMode
+                ? {
+                    color: '#ffffff',
+                    borderColor: '#ffffff',
+                    '&:hover': {
+                      borderColor: '#ffffff',
+                    },
+                  }
+                : {
+                    bgcolor: '#ffffff',
+                    color: '#000000',
+                    border: '1px solid #000000',
+                    '&:hover': {
+                      bgcolor: '#f2f2f2',
+                      border: '1px solid #000000',
+                    },
+                  }
+            }
+          >
             Cancel
           </Button>
-          <Button onClick={handleDelete} color="error" disabled={deleting}>
+          <Button variant="contained" onClick={handleDelete} disabled={deleting}>
             {deleting ? <CircularProgress size={20} color="inherit" /> : 'Delete'}
           </Button>
         </DialogActions>

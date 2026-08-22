@@ -9,7 +9,7 @@ const BRAND_RED = '#d81f1f'
 // this same charcoal as its page background, per the brand -- and switches
 // the shadow tint to white, since a charcoal shadow is invisible against a
 // charcoal page.
-const CHARCOAL = '#1f2328'
+export const CHARCOAL = '#1f2328'
 const SHADOW_TINT_LIGHT = '31, 35, 40'
 export const SHADOW_TINT_DARK = '255, 255, 255'
 

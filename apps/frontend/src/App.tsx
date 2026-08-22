@@ -5,6 +5,7 @@ import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
 import { AuthCard } from './components/auth/AuthCard'
 import { Layout } from './components/layout/Layout'
+import { SearchProvider } from './context/SearchProvider'
 import { useAuth } from './context/useAuth'
 import { logIn, signUp } from './lib/auth'
 import { HomePage } from './pages/HomePage'
@@ -30,40 +31,42 @@ function App() {
   }
 
   return (
-    <Layout>
-      {checkingSession ? (
-        <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <CircularProgress />
-        </Box>
-      ) : user ? (
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/upload" element={<UploadPage />} />
-          <Route path="/videos/:id" element={<VideoPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      ) : (
-        <Box
-          sx={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 2,
-            p: 2,
-          }}
-        >
-          {signUpNotice && (
-            <Alert severity="success" sx={{ maxWidth: 400, width: '100%' }}>
-              {signUpNotice}
-            </Alert>
-          )}
-          <AuthCard onLogin={handleLogin} onSignUp={handleSignUp} />
-        </Box>
-      )}
-    </Layout>
+    <SearchProvider>
+      <Layout>
+        {checkingSession ? (
+          <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <CircularProgress />
+          </Box>
+        ) : user ? (
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/upload" element={<UploadPage />} />
+            <Route path="/videos/:id" element={<VideoPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        ) : (
+          <Box
+            sx={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 2,
+              p: 2,
+            }}
+          >
+            {signUpNotice && (
+              <Alert severity="success" sx={{ maxWidth: 400, width: '100%' }}>
+                {signUpNotice}
+              </Alert>
+            )}
+            <AuthCard onLogin={handleLogin} onSignUp={handleSignUp} />
+          </Box>
+        )}
+      </Layout>
+    </SearchProvider>
   )
 }
 
