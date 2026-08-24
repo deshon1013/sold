@@ -1,4 +1,5 @@
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutlined'
+import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined'
 import Avatar from '@mui/material/Avatar'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
@@ -90,7 +91,7 @@ export function VideoCard({ video, onClick }: VideoCardProps) {
 
           <Chip label={video.gameTitle} size="small" variant="outlined" sx={{ mb: 1 }} />
 
-          <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
+          <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center', mb: 1 }}>
             <Avatar src={video.uploadedByAvatarUrl} sx={{ width: 20, height: 20, fontSize: 10 }}>
               {getInitials(video.uploadedBy)}
             </Avatar>
@@ -98,6 +99,15 @@ export function VideoCard({ video, onClick }: VideoCardProps) {
               {video.uploadedBy} · {relativeTime(video.createdAt)}
             </Typography>
           </Stack>
+
+          {video.likeCount > 0 && (
+            <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center', color: 'text.secondary' }}>
+              <ThumbUpOutlinedIcon sx={{ fontSize: 16 }} />
+              <Typography variant="body2">
+                {video.likeCount} {video.likeCount === 1 ? 'like' : 'likes'}
+              </Typography>
+            </Stack>
+          )}
         </CardContent>
       </CardActionArea>
     </Card>
