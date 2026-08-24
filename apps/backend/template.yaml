@@ -51,6 +51,13 @@ Resources:
           R2_SECRET_ACCESS_KEY: !Ref R2SecretAccessKey
           R2_BUCKET_NAME: !Ref R2BucketName
           R2_PUBLIC_URL: !Ref R2PublicUrl
+          THUMBNAIL_FUNCTION_NAME: !Ref ThumbnailFunction
+      # Lets the API invoke ThumbnailFunction (fire-and-forget) without a
+      # hand-written IAM statement -- SAM's LambdaInvokePolicy grants exactly
+      # lambda:InvokeFunction, scoped to that one function.
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ThumbnailFunction
       # CORS is handled entirely by the Express app's own cors() middleware
       # (see apps/backend/src/app.ts) -- do not also configure Cors here.
       # A Function URL's own CORS layer stacks its own Access-Control-Allow-Origin
@@ -58,6 +65,45 @@ Resources:
       # values for that header.
       FunctionUrlConfig:
         AuthType: NONE
+
+  ThumbnailFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: 'node22'
+        Sourcemap: false
+        EntryPoints:
+          - src/thumbnailWorkerLambda.ts
+        # @ffmpeg-installer/ffmpeg ships a native binary -- esbuild can't
+        # bundle that, so it's excluded from the bundle and SAM instead
+        # copies the package's node_modules folder into the deployment
+        # artifact as-is.
+        External:
+          - '@ffmpeg-installer/ffmpeg'
+    Properties:
+      FunctionName: !Sub sold-backend-thumbnail-${Environment}
+      Runtime: nodejs22.x
+      Handler: thumbnailWorkerLambda.handler
+      CodeUri: .
+      # Video work needs real CPU/time/disk -- BackendFunction's 256MB/10s is
+      # nowhere near enough for downloading + ffmpeg-processing a video file.
+      MemorySize: 1536
+      Timeout: 60
+      EphemeralStorage:
+        Size: 2048
+      # Not exposed via a Function URL -- only ever invoked directly by
+      # BackendFunction via lambda:InvokeFunction, never over HTTP.
+      Environment:
+        Variables:
+          SUPABASE_URL: !Ref SupabaseUrl
+          SUPABASE_SERVICE_ROLE_KEY: !Ref SupabaseServiceRoleKey
+          R2_ACCOUNT_ID: !Ref R2AccountId
+          R2_ACCESS_KEY_ID: !Ref R2AccessKeyId
+          R2_SECRET_ACCESS_KEY: !Ref R2SecretAccessKey
+          R2_BUCKET_NAME: !Ref R2BucketName
+          R2_PUBLIC_URL: !Ref R2PublicUrl
 
 Outputs:
   FunctionUrl:
