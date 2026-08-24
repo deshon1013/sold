@@ -1,7 +1,11 @@
 import { supabase } from './supabase'
 import type { Video } from '../types/video'
 
-const VIDEO_SELECT = '*, profiles(name, avatar_url)'
+// The FK constraint is named explicitly because the `likes` table (video_id
+// -> videos, user_id -> profiles) makes PostgREST see an *implicit*
+// many-to-many path between videos and profiles too -- without this hint it
+// can't tell that apart from the direct uploader relationship below.
+const VIDEO_SELECT = '*, profiles!videos_uploaded_by_fkey(name, avatar_url)'
 
 interface VideoRow {
   id: string

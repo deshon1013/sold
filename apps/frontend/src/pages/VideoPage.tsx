@@ -3,10 +3,10 @@ import type { ChangeEvent, SubmitEvent } from 'react'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import ReactPlayer from 'react-player'
-import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutlineOutlined'
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined'
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import PhotoCameraOutlinedIcon from '@mui/icons-material/PhotoCameraOutlined'
+import ThumbUpIcon from '@mui/icons-material/ThumbUp'
 import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined'
 import Alert from '@mui/material/Alert'
 import Avatar from '@mui/material/Avatar'
@@ -20,7 +20,6 @@ import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
 import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
-import Divider from '@mui/material/Divider'
 import IconButton from '@mui/material/IconButton'
 import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
@@ -28,8 +27,10 @@ import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import { useTheme } from '@mui/material/styles'
 import { PageBreadcrumbs } from '../components/layout/PageBreadcrumbs'
+import { CommentSection } from '../components/videos/CommentSection'
 import { useAuth } from '../context/useAuth'
 import { getInitials } from '../lib/avatar'
+import { isVideoLikedByUser, likeVideo, unlikeVideo } from '../lib/likes'
 import { relativeTime } from '../lib/relativeTime'
 import { deleteFile, uploadFile } from '../lib/uploads'
 import { deleteVideoRow, fetchVideoById, updateVideo } from '../lib/videos'
@@ -63,11 +64,21 @@ function VideoPageContent({ id }: { id: string }) {
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
+  const [liked, setLiked] = useState(false)
+  const [likePending, setLikePending] = useState(false)
+
   useEffect(() => {
     fetchVideoById(id)
       .then(setVideo)
       .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Could not load video'))
   }, [id])
+
+  useEffect(() => {
+    if (!user) return
+    isVideoLikedByUser(id, user.id)
+      .then(setLiked)
+      .catch((err: unknown) => console.error('Failed to check like status', err))
+  }, [id, user])
 
   if (error) {
     return (
@@ -190,6 +201,30 @@ function VideoPageContent({ id }: { id: string }) {
     }
   }
 
+  async function handleToggleLike() {
+    if (!video || !user || likePending) return
+    const wasLiked = liked
+    const likedVideo = video
+
+    // Optimistic update -- reverted below if the request fails.
+    setLiked(!wasLiked)
+    setVideo({ ...likedVideo, likeCount: likedVideo.likeCount + (wasLiked ? -1 : 1) })
+    setLikePending(true)
+    try {
+      if (wasLiked) {
+        await unlikeVideo(likedVideo.id, user.id)
+      } else {
+        await likeVideo(likedVideo.id, user.id)
+      }
+    } catch (err) {
+      setLiked(wasLiked)
+      setVideo(likedVideo)
+      console.error('Failed to toggle like', err)
+    } finally {
+      setLikePending(false)
+    }
+  }
+
   return (
     <Container maxWidth="md" sx={{ flex: 1, py: 4 }}>
       <PageBreadcrumbs current={video.title} />
@@ -263,10 +298,24 @@ function VideoPageContent({ id }: { id: string }) {
         </Stack>
       ) : (
         <>
-          <Stack direction="row" sx={{ alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
-            <Typography variant="h5" component="h1" sx={{ fontWeight: 600 }} gutterBottom>
-              {video.title}
-            </Typography>
+          <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+            <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+              <Typography variant="h5" component="h1" sx={{ fontWeight: 600 }}>
+                {video.title}
+              </Typography>
+              <Button
+                variant="outlined"
+                color="inherit"
+                size="small"
+                onClick={handleToggleLike}
+                disabled={likePending}
+                startIcon={
+                  liked ? <ThumbUpIcon fontSize="small" color="primary" /> : <ThumbUpOutlinedIcon fontSize="small" />
+                }
+              >
+                {video.likeCount}
+              </Button>
+            </Stack>
 
             {isOwner && (
               <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0 }}>
@@ -289,7 +338,7 @@ function VideoPageContent({ id }: { id: string }) {
             )}
           </Stack>
 
-          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mt: 1 }}>
             <Chip label={video.gameTitle} size="small" variant="outlined" />
             <Avatar src={video.uploadedByAvatarUrl} sx={{ width: 22, height: 22, fontSize: 11 }}>
               {getInitials(video.uploadedBy)}
@@ -298,24 +347,14 @@ function VideoPageContent({ id }: { id: string }) {
               {video.uploadedBy} · {relativeTime(video.createdAt)}
             </Typography>
           </Stack>
-
-          <Divider sx={{ my: 2 }} />
-
-          <Stack direction="row" spacing={1}>
-            <Button variant="outlined" color="inherit" size="small" startIcon={<ThumbUpOutlinedIcon fontSize="small" />}>
-              {video.likeCount}
-            </Button>
-            <Button
-              variant="outlined"
-              color="inherit"
-              size="small"
-              startIcon={<ChatBubbleOutlineIcon fontSize="small" />}
-            >
-              {video.commentCount}
-            </Button>
-          </Stack>
         </>
       )}
+
+      <CommentSection
+        videoId={video.id}
+        commentCount={video.commentCount}
+        onCommentPosted={() => setVideo((current) => (current ? { ...current, commentCount: current.commentCount + 1 } : current))}
+      />
 
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
         <DialogTitle>Delete this video?</DialogTitle>
