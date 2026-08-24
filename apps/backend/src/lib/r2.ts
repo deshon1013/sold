@@ -1,4 +1,4 @@
-import { DeleteObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
 const accountId = process.env.R2_ACCOUNT_ID
@@ -41,4 +41,20 @@ export function keyFromPublicUrl(url: string): string | null {
 
 export async function deleteObject(key: string): Promise<void> {
   await r2.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }))
+}
+
+/** Downloads an object's full contents -- used server-side (e.g. the thumbnail worker fetching a video to process). */
+export async function downloadObject(key: string): Promise<Buffer> {
+  const { Body } = await r2.send(new GetObjectCommand({ Bucket: bucket, Key: key }))
+  if (!Body) throw new Error(`R2 object has no body: ${key}`)
+  const chunks: Buffer[] = []
+  for await (const chunk of Body as AsyncIterable<Buffer>) {
+    chunks.push(chunk)
+  }
+  return Buffer.concat(chunks)
+}
+
+/** Uploads bytes directly (server-side only -- the client-facing path is the presigned URL above). */
+export async function uploadObject(key: string, body: Buffer, contentType: string): Promise<void> {
+  await r2.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: body, ContentType: contentType }))
 }
