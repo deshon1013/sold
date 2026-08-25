@@ -66,22 +66,6 @@ Resources:
       FunctionUrlConfig:
         AuthType: NONE
 
-  # A raw ffmpeg binary, staged into layers/ffmpeg/bin/ffmpeg by the deploy
-  # workflow before `sam build` runs (see .github/workflows/deploy-backend.yml).
-  # Not packaged via esbuild's External + npm -- in this npm-workspaces
-  # monorepo, @ffmpeg-installer/ffmpeg gets hoisted out of
-  # apps/backend/node_modules, and SAM's esbuild builder couldn't find it
-  # there to copy into the deployment package. A Layer sidesteps that
-  # entirely: it's a separate, independently-zipped deployment artifact.
-  FfmpegLayer:
-    Type: AWS::Serverless::LayerVersion
-    Properties:
-      LayerName: !Sub sold-ffmpeg-${Environment}
-      ContentUri: layers/ffmpeg/
-      CompatibleRuntimes:
-        - nodejs22.x
-      RetentionPolicy: Delete
-
   ThumbnailFunction:
     Type: AWS::Serverless::Function
     Metadata:
@@ -92,6 +76,12 @@ Resources:
         Sourcemap: false
         EntryPoints:
           - src/thumbnailWorkerLambda.ts
+        # @ffmpeg-installer/ffmpeg ships a native binary -- esbuild can't
+        # bundle that, so it's excluded from the bundle and SAM instead
+        # copies the package's node_modules folder into the deployment
+        # artifact as-is.
+        External:
+          - '@ffmpeg-installer/ffmpeg'
     Properties:
       FunctionName: !Sub sold-backend-thumbnail-${Environment}
       Runtime: nodejs22.x
@@ -103,8 +93,6 @@ Resources:
       Timeout: 60
       EphemeralStorage:
         Size: 2048
-      Layers:
-        - !Ref FfmpegLayer
       # Not exposed via a Function URL -- only ever invoked directly by
       # BackendFunction via lambda:InvokeFunction, never over HTTP.
       Environment:
