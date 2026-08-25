@@ -20,6 +20,7 @@ import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
 import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
+import Divider from '@mui/material/Divider'
 import IconButton from '@mui/material/IconButton'
 import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
@@ -35,6 +36,10 @@ import { relativeTime } from '../lib/relativeTime'
 import { deleteFile, uploadFile } from '../lib/uploads'
 import { deleteVideoRow, fetchVideoById, updateVideo } from '../lib/videos'
 import type { Video } from '../types/video'
+
+// Below this length, a description already fits comfortably in ~3 lines --
+// no point showing a "Show more" toggle that would have nothing to expand.
+const DESCRIPTION_COLLAPSE_THRESHOLD = 200
 
 export function VideoPage() {
   const { id } = useParams<{ id: string }>()
@@ -55,6 +60,7 @@ function VideoPageContent({ id }: { id: string }) {
   const [editing, setEditing] = useState(false)
   const [editTitle, setEditTitle] = useState('')
   const [editGameTitle, setEditGameTitle] = useState('')
+  const [editDescription, setEditDescription] = useState('')
   const [pendingThumbnailFile, setPendingThumbnailFile] = useState<File | null>(null)
   const [thumbnailPreviewUrl, setThumbnailPreviewUrl] = useState<string | null>(null)
   const [savingEdit, setSavingEdit] = useState(false)
@@ -66,6 +72,8 @@ function VideoPageContent({ id }: { id: string }) {
 
   const [liked, setLiked] = useState(false)
   const [likePending, setLikePending] = useState(false)
+
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false)
 
   useEffect(() => {
     fetchVideoById(id)
@@ -112,6 +120,7 @@ function VideoPageContent({ id }: { id: string }) {
     if (!video) return
     setEditTitle(video.title)
     setEditGameTitle(video.gameTitle)
+    setEditDescription(video.description ?? '')
     setPendingThumbnailFile(null)
     setThumbnailPreviewUrl(null)
     setEditError(null)
@@ -156,6 +165,7 @@ function VideoPageContent({ id }: { id: string }) {
       const updated = await updateVideo(video.id, {
         title: trimmedTitle,
         gameTitle: trimmedGameTitle,
+        description: editDescription.trim(),
         ...(thumbnailUrl ? { thumbnailUrl } : {}),
       })
 
@@ -254,6 +264,16 @@ function VideoPageContent({ id }: { id: string }) {
             required
           />
 
+          <TextField
+            label="Description (optional)"
+            value={editDescription}
+            onChange={(event) => setEditDescription(event.target.value)}
+            disabled={savingEdit}
+            fullWidth
+            multiline
+            minRows={3}
+          />
+
           <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
             <Box
               sx={{
@@ -347,8 +367,41 @@ function VideoPageContent({ id }: { id: string }) {
               {video.uploadedBy} · {relativeTime(video.createdAt)}
             </Typography>
           </Stack>
+
+          {video.description && (
+            <Box sx={{ mt: 2 }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  whiteSpace: 'pre-wrap',
+                  ...(!descriptionExpanded && video.description.length > DESCRIPTION_COLLAPSE_THRESHOLD
+                    ? {
+                        display: '-webkit-box',
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                      }
+                    : {}),
+                }}
+              >
+                {video.description}
+              </Typography>
+              {video.description.length > DESCRIPTION_COLLAPSE_THRESHOLD && (
+                <Button
+                  size="small"
+                  color="inherit"
+                  onClick={() => setDescriptionExpanded((prev) => !prev)}
+                  sx={{ mt: 0.5, px: 0, minWidth: 0 }}
+                >
+                  {descriptionExpanded ? 'Show less' : 'Show more'}
+                </Button>
+              )}
+            </Box>
+          )}
         </>
       )}
+
+      <Divider sx={{ my: 3 }} />
 
       <CommentSection
         videoId={video.id}

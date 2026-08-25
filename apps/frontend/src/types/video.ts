@@ -2,6 +2,7 @@ export interface Video {
   id: string
   title: string
   gameTitle: string
+  description?: string
   videoUrl: string
   createdAt: string
   uploadedById: string

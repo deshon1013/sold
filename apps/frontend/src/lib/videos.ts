@@ -11,6 +11,7 @@ interface VideoRow {
   id: string
   title: string
   game_title: string
+  description: string | null
   video_url: string
   thumbnail_url: string | null
   uploaded_by: string
@@ -27,6 +28,7 @@ function toVideo(row: VideoRow): Video {
     id: row.id,
     title: row.title,
     gameTitle: row.game_title,
+    description: row.description ?? undefined,
     videoUrl: row.video_url,
     thumbnailUrl: row.thumbnail_url ?? undefined,
     uploadedById: row.uploaded_by,
@@ -56,6 +58,7 @@ export async function fetchVideoById(id: string): Promise<Video | null> {
 export interface NewVideoInput {
   title: string
   gameTitle: string
+  description?: string
   videoUrl: string
   thumbnailUrl?: string
   uploadedBy: string
@@ -67,6 +70,7 @@ export async function insertVideo(input: NewVideoInput): Promise<Video> {
     .insert({
       title: input.title,
       game_title: input.gameTitle,
+      description: input.description ?? null,
       video_url: input.videoUrl,
       thumbnail_url: input.thumbnailUrl ?? null,
       uploaded_by: input.uploadedBy,
@@ -80,6 +84,7 @@ export async function insertVideo(input: NewVideoInput): Promise<Video> {
 export interface VideoUpdateInput {
   title?: string
   gameTitle?: string
+  description?: string
   thumbnailUrl?: string
 }
 
@@ -90,6 +95,7 @@ export async function updateVideo(id: string, input: VideoUpdateInput): Promise<
     .update({
       ...(input.title !== undefined ? { title: input.title } : {}),
       ...(input.gameTitle !== undefined ? { game_title: input.gameTitle } : {}),
+      ...(input.description !== undefined ? { description: input.description || null } : {}),
       ...(input.thumbnailUrl !== undefined ? { thumbnail_url: input.thumbnailUrl } : {}),
     })
     .eq('id', id)
