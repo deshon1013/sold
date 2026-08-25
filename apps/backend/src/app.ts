@@ -1,6 +1,5 @@
 import cors from 'cors'
 import express from 'express'
-import { thumbnailsRouter } from './routes/thumbnails.js'
 import { uploadsRouter } from './routes/uploads.js'
 
 export const app = express()
@@ -13,4 +12,3 @@ app.get('/api/health', (_req, res) => {
 })
 
 app.use('/api/uploads', uploadsRouter)
-app.use('/api/thumbnails', thumbnailsRouter)
