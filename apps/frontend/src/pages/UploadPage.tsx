@@ -32,6 +32,7 @@ export function UploadPage() {
 
   const [title, setTitle] = useState('')
   const [gameTitle, setGameTitle] = useState('')
+  const [description, setDescription] = useState('')
   const [videoFile, setVideoFile] = useState<File | null>(null)
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null)
   const [errors, setErrors] = useState<FieldErrors>({})
@@ -78,6 +79,7 @@ export function UploadPage() {
       const video = await insertVideo({
         title: title.trim(),
         gameTitle: gameTitle.trim(),
+        description: description.trim() || undefined,
         videoUrl,
         thumbnailUrl,
         uploadedBy: user.id,
@@ -127,6 +129,16 @@ export function UploadPage() {
             disabled={submitting}
             fullWidth
             required
+          />
+
+          <TextField
+            label="Description (optional)"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            disabled={submitting}
+            fullWidth
+            multiline
+            minRows={3}
           />
 
           <Box>
