@@ -7,16 +7,17 @@ import { AuthCard } from './components/auth/AuthCard'
 import { Layout } from './components/layout/Layout'
 import { SearchProvider } from './context/SearchProvider'
 import { useAuth } from './context/useAuth'
-import { logIn, signUp } from './lib/auth'
+import { logIn, requestPasswordReset, signUp } from './lib/auth'
 import { HomePage } from './pages/HomePage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { ProfilePage } from './pages/ProfilePage'
+import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { UploadPage } from './pages/UploadPage'
 import { VideoPage } from './pages/VideoPage'
 import type { LoginFormValues, SignUpFormValues } from './types/user'
 
 function App() {
-  const { user, checkingSession } = useAuth()
+  const { user, checkingSession, passwordRecovery } = useAuth()
   const [signUpNotice, setSignUpNotice] = useState<string | null>(null)
 
   async function handleLogin(values: LoginFormValues) {
@@ -31,6 +32,10 @@ function App() {
     }
   }
 
+  async function handleForgotPassword(email: string) {
+    await requestPasswordReset(email)
+  }
+
   return (
     <SearchProvider>
       <Layout>
@@ -38,6 +43,8 @@ function App() {
           <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <CircularProgress />
           </Box>
+        ) : passwordRecovery ? (
+          <ResetPasswordPage />
         ) : user ? (
           <Routes>
             <Route path="/" element={<HomePage />} />
@@ -63,7 +70,7 @@ function App() {
                 {signUpNotice}
               </Alert>
             )}
-            <AuthCard onLogin={handleLogin} onSignUp={handleSignUp} />
+            <AuthCard onLogin={handleLogin} onSignUp={handleSignUp} onForgotPassword={handleForgotPassword} />
           </Box>
         )}
       </Layout>

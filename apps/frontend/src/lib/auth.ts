@@ -1,4 +1,4 @@
-import type { User as SupabaseUser } from '@supabase/supabase-js'
+import type { AuthChangeEvent, User as SupabaseUser } from '@supabase/supabase-js'
 import { supabase } from './supabase'
 import type { LoginFormValues, SignUpFormValues, User } from '../types/user'
 
@@ -62,10 +62,24 @@ export async function getCurrentUser(): Promise<User | null> {
   return data.user ? toUser(data.user) : null
 }
 
-/** Fires on sign-in, sign-out, and token refresh; returns an unsubscribe function. */
-export function onAuthChange(callback: (user: User | null) => void): () => void {
-  const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-    callback(session?.user ? toUser(session.user) : null)
+/** Fires on sign-in, sign-out, token refresh, and password-recovery link clicks; returns an unsubscribe function. */
+export function onAuthChange(callback: (user: User | null, event: AuthChangeEvent) => void): () => void {
+  const { data } = supabase.auth.onAuthStateChange((event, session) => {
+    callback(session?.user ? toUser(session.user) : null, event)
   })
   return () => data.subscription.unsubscribe()
+}
+
+/** Emails a link back to /reset-password. Clicking it briefly signs the user in under a 'PASSWORD_RECOVERY' event. */
+export async function requestPasswordReset(email: string): Promise<void> {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/reset-password`,
+  })
+  if (error) throw new Error(error.message)
+}
+
+/** Only succeeds while a recovery session (from the emailed link) is active. */
+export async function updatePassword(newPassword: string): Promise<void> {
+  const { error } = await supabase.auth.updateUser({ password: newPassword })
+  if (error) throw new Error(error.message)
 }

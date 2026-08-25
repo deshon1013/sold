@@ -3,6 +3,7 @@ import type { SubmitEvent } from 'react'
 import Alert from '@mui/material/Alert'
 import Button from '@mui/material/Button'
 import CircularProgress from '@mui/material/CircularProgress'
+import Link from '@mui/material/Link'
 import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
 import { PasswordField } from './PasswordField'
@@ -13,15 +14,21 @@ type FieldErrors = Partial<Record<keyof LoginFormValues, string>>
 
 interface LoginFormProps {
   onSubmit: (values: LoginFormValues) => Promise<void>
+  onForgotPassword: (email: string) => Promise<void>
 }
 
 const initialValues: LoginFormValues = { email: '', password: '' }
 
-export function LoginForm({ onSubmit }: LoginFormProps) {
+export function LoginForm({ onSubmit, onForgotPassword }: LoginFormProps) {
   const [values, setValues] = useState<LoginFormValues>(initialValues)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+
+  const [forgotMode, setForgotMode] = useState(false)
+  const [forgotSent, setForgotSent] = useState(false)
+  const [forgotSubmitting, setForgotSubmitting] = useState(false)
+  const [forgotError, setForgotError] = useState<string | null>(null)
 
   function handleChange(field: keyof LoginFormValues, value: string) {
     setValues((prev) => ({ ...prev, [field]: value }))
@@ -53,6 +60,65 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
     }
   }
 
+  function startForgotPassword() {
+    setForgotMode(true)
+    setForgotSent(false)
+    setForgotError(null)
+  }
+
+  async function handleForgotSubmit(event: SubmitEvent) {
+    event.preventDefault()
+    setForgotError(null)
+
+    const emailError = validateEmail(values.email)
+    setErrors((prev) => ({ ...prev, email: emailError }))
+    if (emailError) return
+
+    setForgotSubmitting(true)
+    try {
+      await onForgotPassword(values.email)
+      setForgotSent(true)
+    } catch (err) {
+      setForgotError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
+    } finally {
+      setForgotSubmitting(false)
+    }
+  }
+
+  if (forgotMode) {
+    return (
+      <Stack component="form" spacing={2.5} onSubmit={handleForgotSubmit} noValidate>
+        {forgotSent ? (
+          <Alert severity="success">Check your email for a link to reset your password.</Alert>
+        ) : (
+          <>
+            {forgotError && <Alert severity="error">{forgotError}</Alert>}
+
+            <TextField
+              label="Email"
+              type="email"
+              autoComplete="email"
+              value={values.email}
+              onChange={(e) => handleChange('email', e.target.value)}
+              error={!!errors.email}
+              helperText={errors.email}
+              fullWidth
+              required
+            />
+
+            <Button type="submit" variant="contained" size="large" disabled={forgotSubmitting}>
+              {forgotSubmitting ? <CircularProgress size={22} color="inherit" /> : 'Send reset link'}
+            </Button>
+          </>
+        )}
+
+        <Link component="button" type="button" onClick={() => setForgotMode(false)} sx={{ alignSelf: 'center' }}>
+          Back to log in
+        </Link>
+      </Stack>
+    )
+  }
+
   return (
     <Stack component="form" spacing={2.5} onSubmit={handleSubmit} noValidate>
       {submitError && <Alert severity="error">{submitError}</Alert>}
@@ -79,6 +145,10 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
         fullWidth
         required
       />
+
+      <Link component="button" type="button" onClick={startForgotPassword} sx={{ alignSelf: 'flex-end' }}>
+        Forgot password?
+      </Link>
 
       <Button type="submit" variant="contained" size="large" disabled={submitting}>
         {submitting ? <CircularProgress size={22} color="inherit" /> : 'Log in'}
