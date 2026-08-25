@@ -11,9 +11,10 @@ import type { LoginFormValues, SignUpFormValues } from '../../types/user'
 interface AuthCardProps {
   onLogin: (values: LoginFormValues) => Promise<void>
   onSignUp: (values: SignUpFormValues) => Promise<void>
+  onForgotPassword: (email: string) => Promise<void>
 }
 
-export function AuthCard({ onLogin, onSignUp }: AuthCardProps) {
+export function AuthCard({ onLogin, onSignUp, onForgotPassword }: AuthCardProps) {
   const [tab, setTab] = useState<'login' | 'signup'>('login')
 
   return (
@@ -33,7 +34,7 @@ export function AuthCard({ onLogin, onSignUp }: AuthCardProps) {
       </Tabs>
 
       <Box role="tabpanel" hidden={tab !== 'login'}>
-        {tab === 'login' && <LoginForm onSubmit={onLogin} />}
+        {tab === 'login' && <LoginForm onSubmit={onLogin} onForgotPassword={onForgotPassword} />}
       </Box>
       <Box role="tabpanel" hidden={tab !== 'signup'}>
         {tab === 'signup' && <SignUpForm onSubmit={onSignUp} />}
