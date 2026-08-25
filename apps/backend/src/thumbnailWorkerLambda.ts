@@ -4,11 +4,19 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
-import ffmpegPath from '@ffmpeg-installer/ffmpeg'
 import { downloadObject, keyFromPublicUrl, publicUrlFor, uploadObject } from './lib/r2.js'
 import { supabaseAdmin } from './lib/supabaseAdmin.js'
 
 const execFileAsync = promisify(execFile)
+
+// Lambda always mounts layer contents at /opt -- the ffmpeg binary is staged
+// into the layer at layers/ffmpeg/bin/ffmpeg by the deploy workflow (see
+// .github/workflows/deploy-backend.yml), not imported as an npm package.
+// (An earlier version used @ffmpeg-installer/ffmpeg directly, but SAM's
+// esbuild builder couldn't locate it after npm workspace hoisting moved it
+// out of apps/backend/node_modules -- a Lambda Layer sidesteps that
+// entirely, since it's a separate, well-defined deployment mechanism.)
+const FFMPEG_PATH = '/opt/bin/ffmpeg'
 
 interface ThumbnailJob {
   videoId: string
@@ -76,7 +84,7 @@ export async function handler(event: unknown): Promise<void> {
 async function extractFrame(inputPath: string, outputPath: string): Promise<void> {
   for (const seekSeconds of [1, 0]) {
     try {
-      await execFileAsync(ffmpegPath.path, [
+      await execFileAsync(FFMPEG_PATH, [
         '-y',
         '-ss',
         String(seekSeconds),

@@ -32,6 +32,18 @@ jobs:
 
       - run: npm ci
 
+      # ffmpeg for the thumbnail worker ships via a Lambda Layer, not an
+      # npm import -- SAM's esbuild builder can't locate @ffmpeg-installer/ffmpeg
+      # after npm workspace hoisting moves it out of apps/backend/node_modules.
+      # npm ci above still resolves the correct linux-x64 binary (this runner
+      # matches Lambda's default architecture); this just stages it where the
+      # FfmpegLayer resource in template.yaml expects to find it.
+      - name: Stage ffmpeg binary for Lambda layer
+        run: |
+          mkdir -p apps/backend/layers/ffmpeg/bin
+          cp node_modules/@ffmpeg-installer/linux-x64/ffmpeg apps/backend/layers/ffmpeg/bin/ffmpeg
+          chmod +x apps/backend/layers/ffmpeg/bin/ffmpeg
+
       - name: sam build
         working-directory: apps/backend
         run: sam build

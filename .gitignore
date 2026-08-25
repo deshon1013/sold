@@ -15,6 +15,10 @@ dist-ssr
 # AWS SAM build output
 .aws-sam/
 
+# ffmpeg binary staged into the Lambda layer by deploy-backend.yml -- never
+# committed, always freshly copied from node_modules during CI.
+apps/backend/layers/
+
 # Personal infra/CI-CD setup reference (not project source)
 CICD-SETUP-NOTES.md
 
