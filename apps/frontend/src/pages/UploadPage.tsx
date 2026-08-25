@@ -13,7 +13,6 @@ import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import { PageBreadcrumbs } from '../components/layout/PageBreadcrumbs'
 import { useAuth } from '../context/useAuth'
-import { requestServerThumbnail } from '../lib/thumbnails'
 import { uploadFile } from '../lib/uploads'
 import { captureVideoFrame } from '../lib/videoFrame'
 import { insertVideo } from '../lib/videos'
@@ -68,22 +67,12 @@ export function UploadPage() {
       const videoUrl = await uploadFile(videoFile!, 'video')
 
       let thumbnailUrl: string | undefined
-      let needsServerThumbnail = false
-      if (thumbnailFile) {
+      // No thumbnail picked -- fall back to a still frame captured from the
+      // video itself rather than leaving the video with no thumbnail at all.
+      const fileToUpload = thumbnailFile ?? (await captureVideoFrame(videoFile!))
+      if (fileToUpload) {
         setStatus('thumbnail')
-        thumbnailUrl = await uploadFile(thumbnailFile, 'thumbnail')
-      } else {
-        // No thumbnail picked -- try a still frame captured from the video
-        // itself. If that fails (device/browser-dependent), fall back to
-        // generating one server-side after the video row exists below,
-        // rather than leaving the video with no thumbnail at all.
-        const captured = await captureVideoFrame(videoFile!)
-        if (captured) {
-          setStatus('thumbnail')
-          thumbnailUrl = await uploadFile(captured, 'thumbnail')
-        } else {
-          needsServerThumbnail = true
-        }
+        thumbnailUrl = await uploadFile(fileToUpload, 'thumbnail')
       }
 
       setStatus('saving')
@@ -94,14 +83,6 @@ export function UploadPage() {
         thumbnailUrl,
         uploadedBy: user.id,
       })
-
-      if (needsServerThumbnail) {
-        // Best-effort: the upload succeeding matters more than this request
-        // itself succeeding -- errors just mean no thumbnail, same as today.
-        requestServerThumbnail(video.id, video.videoUrl).catch((err: unknown) => {
-          console.error('Failed to request server-side thumbnail', err)
-        })
-      }
 
       navigate(`/videos/${video.id}`)
     } catch (err) {
