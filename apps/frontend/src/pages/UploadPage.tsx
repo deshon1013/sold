@@ -7,6 +7,7 @@ import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import CircularProgress from '@mui/material/CircularProgress'
 import Container from '@mui/material/Container'
+import LinearProgress from '@mui/material/LinearProgress'
 import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
@@ -14,7 +15,6 @@ import Typography from '@mui/material/Typography'
 import { PageBreadcrumbs } from '../components/layout/PageBreadcrumbs'
 import { useAuth } from '../context/useAuth'
 import { uploadFile } from '../lib/uploads'
-import { captureVideoFrame } from '../lib/videoFrame'
 import { insertVideo } from '../lib/videos'
 
 type FieldErrors = { title?: string; gameTitle?: string; videoFile?: string }
@@ -36,6 +36,7 @@ export function UploadPage() {
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [status, setStatus] = useState<Status>('idle')
+  const [videoProgress, setVideoProgress] = useState(0)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
   const submitting = status !== 'idle'
@@ -64,15 +65,13 @@ export function UploadPage() {
 
     try {
       setStatus('video')
-      const videoUrl = await uploadFile(videoFile!, 'video')
+      setVideoProgress(0)
+      const videoUrl = await uploadFile(videoFile!, 'video', setVideoProgress)
 
       let thumbnailUrl: string | undefined
-      // No thumbnail picked -- fall back to a still frame captured from the
-      // video itself rather than leaving the video with no thumbnail at all.
-      const fileToUpload = thumbnailFile ?? (await captureVideoFrame(videoFile!))
-      if (fileToUpload) {
+      if (thumbnailFile) {
         setStatus('thumbnail')
-        thumbnailUrl = await uploadFile(fileToUpload, 'thumbnail')
+        thumbnailUrl = await uploadFile(thumbnailFile, 'thumbnail')
       }
 
       setStatus('saving')
@@ -149,12 +148,25 @@ export function UploadPage() {
             </Button>
           </Box>
 
+          {status === 'video' && (
+            <Box>
+              <LinearProgress variant="determinate" value={Math.round(videoProgress * 100)} />
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                Uploading video… {Math.round(videoProgress * 100)}%
+              </Typography>
+            </Box>
+          )}
+
           <Button type="submit" variant="contained" size="large" disabled={submitting}>
             {submitting ? (
-              <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
-                <CircularProgress size={20} color="inherit" />
-                <span>{STATUS_LABEL[status as Exclude<Status, 'idle'>]}</span>
-              </Stack>
+              status === 'video' ? (
+                'Uploading video…'
+              ) : (
+                <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+                  <CircularProgress size={20} color="inherit" />
+                  <span>{STATUS_LABEL[status as Exclude<Status, 'idle'>]}</span>
+                </Stack>
+              )
             ) : (
               'Upload'
             )}
