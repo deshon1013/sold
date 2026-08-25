@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Route, Routes } from 'react-router-dom'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
@@ -9,6 +9,7 @@ import { SearchProvider } from './context/SearchProvider'
 import { useAuth } from './context/useAuth'
 import { logIn, signUp } from './lib/auth'
 import { HomePage } from './pages/HomePage'
+import { NotFoundPage } from './pages/NotFoundPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { UploadPage } from './pages/UploadPage'
 import { VideoPage } from './pages/VideoPage'
@@ -43,7 +44,7 @@ function App() {
             <Route path="/upload" element={<UploadPage />} />
             <Route path="/videos/:id" element={<VideoPage />} />
             <Route path="/profile" element={<ProfilePage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         ) : (
           <Box
